@@ -2705,12 +2705,6 @@ jobs:
                   c.setGravity(Gravity.CENTER);
                   c.setTranslationX(dp(sp.getInt("box_px", 0)));
                   c.setTranslationY(dp(sp.getInt("box_py", 0)));
-                  if (sp.getBoolean("clockOn", false)) {
-                      c.addView(clockBox(fg));
-                      c.addView(dateBox(fg));
-                      return c;
-                  }
-
                   int appsHome = 0;
                   for (Item it : home) {
                       if (!it.folder) appsHome++;
@@ -2723,6 +2717,15 @@ jobs:
                       if (f != null) folderCount = f.apps.size();
                   }
 
+                  boolean clkOn = sp.getBoolean("clockOn", false), dtOn = sp.getBoolean("dateOn", false);
+                  if (clkOn || dtOn) {
+                      // clock on: folder counter -> clock (centered), icon counter removed
+                      // date on + clock on: date on the right of the clock
+                      // date on + clock off: folder counter and icon counter removed, date centered
+                      if (clkOn) c.addView(clockBox(fg));
+                      if (dtOn) c.addView(dateBox(fg));
+                      return c;
+                  }
                   c.addView(countBox(folderCount, fg));
                   c.addView(countBox(appsHome, fg));
                   return c;
@@ -2753,7 +2756,7 @@ jobs:
               }
 
               // ================= clock and Jalali date =================
-              static final String DATE_SEP = "/";
+              static final String DATE_SEP = ".";
 
               int[] g2j(int gy, int gm, int gd) {
                   int[] gdm = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
@@ -2772,10 +2775,11 @@ jobs:
               void setClock(TextView tv) {
                   Calendar c = Calendar.getInstance();
                   String hm = String.format(Locale.US, "%02d:%02d", c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE));
-                  String ss = String.format(Locale.US, ":%02d", c.get(Calendar.SECOND));
+                  String ss = String.format(Locale.US, " %02d", c.get(Calendar.SECOND));
                   android.text.SpannableString st = new android.text.SpannableString(hm + ss);
-                  st.setSpan(new android.text.style.RelativeSizeSpan(0.72f), hm.length(), st.length(), 0);
-                  st.setSpan(new android.text.style.ForegroundColorSpan((sp.getInt("box_tc", fgc) & 0x00FFFFFF) | 0xB0000000),
+                  st.setSpan(new android.text.style.RelativeSizeSpan(0.6f), hm.length(), st.length(), 0);
+                  st.setSpan(new android.text.style.SuperscriptSpan(), hm.length(), st.length(), 0);
+                  st.setSpan(new android.text.style.ForegroundColorSpan((sp.getInt("box_tc", fgc) & 0x00FFFFFF) | 0x88000000),
                           hm.length(), st.length(), 0);
                   tv.setText(st);
               }
@@ -2784,7 +2788,7 @@ jobs:
                   Calendar c = Calendar.getInstance();
                   int[] j = g2j(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
                   tv.setText(String.format(Locale.US, "%02d" + DATE_SEP + "%02d" + DATE_SEP + "%02d",
-                          j[2], j[1], j[0] % 100));
+                          j[0] % 100, j[1], j[2]));
               }
 
               // refreshes the text while the box is on screen (clock every second, date every 30 seconds)
@@ -2793,7 +2797,7 @@ jobs:
                   r[0] = () -> {
                       if (!tv.isAttachedToWindow()) return;
                       if (date) setDate(tv); else setClock(tv);
-                      tv.postDelayed(r[0], date ? 30000 : 1000);
+                      tv.postDelayed(r[0], date ? 60000 : 1000);
                   };
                   tv.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
                       @Override public void onViewAttachedToWindow(View v) { v.removeCallbacks(r[0]); v.post(r[0]); }
@@ -2813,6 +2817,7 @@ jobs:
                   tv.setTypeface(weightFace(sp.getInt("box_tw", 3)));
                   try { tv.setFontFeatureSettings("tnum"); } catch (Throwable e) { }
                   tv.setLetterSpacing(0.04f);
+                  tv.setAutoSizeTextTypeUniformWithConfiguration(6, Math.max(7, sc(Math.round(sp.getInt("box_ts", 18) * tsMul))), 1, TypedValue.COMPLEX_UNIT_SP);
                   GradientDrawable g = new GradientDrawable();
                   g.setCornerRadius(dp(16));
                   g.setColor(sp.getInt("box_bg", 0x33FFFFFF));
@@ -2829,9 +2834,9 @@ jobs:
                   return tv;
               }
 
-              View clockBox(int fg) { return timeBox(fg, 1.75f, 0.9f, false); }
+              View clockBox(int fg) { return timeBox(fg, 1.0f, 0.85f, false); }
 
-              View dateBox(int fg) { return timeBox(fg, 1.55f, 0.85f, true); }
+              View dateBox(int fg) { return timeBox(fg, 1.0f, 0.85f, true); }
 
               // a tap does nothing; the settings open only after holding for 1 second
               void longOne(View v, final Runnable r) {
@@ -2866,10 +2871,15 @@ jobs:
               LinearLayout countersBoxes(int fg) {
                   LinearLayout box = new LinearLayout(this);
                   box.setOrientation(LinearLayout.VERTICAL);
-                  box.addView(toggleRow(0xFF00ACC1, "🕒", t("زمان", "Time"),
-                          t("کادر چپ به ساعت دیجیتال و کادر راست به تاریخ شمسی تبدیل می‌شود",
-                                  "Left box becomes a digital clock, right box the Jalali date"),
-                          "clockOn", false, fg));
+                  box.addView(accordionGroup(0xFF00ACC1, "🕒", t("زمان", "Time"), fg,
+                          toggleRow(0xFF00ACC1, "🕰", t("ساعت", "Clock"),
+                                  t("ساعت دیجیتال به جای کادر شمارش پوشه، در وسط نوار ابزار",
+                                          "Digital clock instead of the folder counter, in the toolbar center"),
+                                  "clockOn", false, fg),
+                          toggleRow(0xFF26C6DA, "📅", t("تاریخ", "Date"),
+                                  t("تاریخ شمسی به جای کادر شمارش آیکون، سمت راست ساعت",
+                                          "Jalali date instead of the icon counter, right of the clock"),
+                                  "dateOn", false, fg)));
                   // placement of the two counters together: first lever = horizontal, second = vertical
                   box.addView(accordionGroup(0xFF00ACC1, "↔", t("جای‌گیری", "Placement"), fg,
                           slider(t("جابجایی طولی", "Horizontal move"), "box_px", -100, 100, 0, " dp", fg, null),
@@ -3585,7 +3595,7 @@ jobs:
                       if (a == MotionEvent.ACTION_DOWN) { down(ev); upFired = false; return false; }
                       if (a == MotionEvent.ACTION_MOVE && !upFired && onSwipeUp != null && !drag) {
                           float dx = ev.getX() - x0, dy = ev.getY() - y0;
-                          if (dy < -dp(60) && Math.abs(dy) > Math.abs(dx) * 1.3f) {
+                          if (dy < -dp(40) && Math.abs(dy) > Math.abs(dx) * 1.3f) {
                               upFired = true;
                               onSwipeUp.run();
                               return false;
@@ -4108,6 +4118,7 @@ jobs:
 
               void closeFolder() {
                   if (closing) return;
+                  if (openFolder != null) lastClosedFolder = openFolder;
                   if (curPanel != null && folderApply != null) {
                       final Consumer<Float> ap = folderApply;
                       final View pnl = curPanel;
@@ -4130,7 +4141,6 @@ jobs:
                           @Override
                           public void onAnimationEnd(Animator an) {
                               closing = false;
-                              lastClosedFolder = closingId;
                               openFolder = null;
                               editName = false;
                               folderSettings = false;
@@ -5395,7 +5405,14 @@ jobs:
                       boolean dup = false;
                       for (List<String> l : dock1) if (l.contains(entry)) dup = true;
                       if (dup) {
-                          if (!selDock.contains(entry)) already = true; // items from the dock itself stay silent
+                          if (!selDock.contains(entry) && !k.startsWith("folder:")) {
+                              already = true;
+                              for (Item it : home) if (it.folder) it.apps.remove(entry);
+                              home.removeIf(q -> !q.folder && entry.equals(q.pkg));
+                              changed = true;
+                          } else if (!selDock.contains(entry)) {
+                              already = true;
+                          } // items from the dock itself stay silent
                           continue;
                       }
                       List<String> l = dockPageList(Math.min(dockPage1, pages - 1));
@@ -5404,12 +5421,17 @@ jobs:
                           Item f = findFolder(k.substring(7));
                           if (f != null) f.docked = true; // keep the folder data, just hide it from the grid
                       }
+                      if (!k.startsWith("folder:") && !selDock.contains(entry)) {
+                          // moved from the home page or from a folder: it leaves there
+                          for (Item it : home) if (it.folder) it.apps.remove(entry);
+                          home.removeIf(q -> !q.folder && entry.equals(q.pkg));
+                      }
                       l.add(entry);
                       changed = true;
                   }
                   if (already) Toast.makeText(this, t("قبلاً در داک هست", "Already in the dock"), Toast.LENGTH_SHORT).show();
                   if (full) Toast.makeText(this, t("این صفحه داک پر است", "This dock page is full"), Toast.LENGTH_SHORT).show();
-                  if (!changed) {
+                                    if (!changed) {
                       dragKeys.clear();
                       dragFromDock = false;
                       return;
