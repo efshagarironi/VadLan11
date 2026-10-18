@@ -1835,12 +1835,13 @@ jobs:
               // circle, or a box like the counters when "header icons shape" is on
               void styleTop(ImageView v, int fg) {
                   v.setColorFilter(sp.getInt("top_ic", fg));
-                  if (sp.getBoolean("topIconBox", false)) {
-                      int c = sp.contains("top_ibg") ? sp.getInt("top_ibg", 0x33FFFFFF) : sp.getInt("box_bg", 0x33FFFFFF);
-                      v.setBackground(rr(c, dp(16)));
-                  } else {
-                      v.setBackground(oval(sp.getInt("top_ibg", light() ? 0x22000000 : 0x33FFFFFF)));
-                  }
+                  // same box as the clock and date boxes: rounded, with a very thin white edge
+                  int c = sp.contains("top_ibg") ? sp.getInt("top_ibg", 0x33FFFFFF) : sp.getInt("box_bg", 0x33FFFFFF);
+                  GradientDrawable g = new GradientDrawable();
+                  g.setCornerRadius(dp(16));
+                  g.setColor(c);
+                  g.setStroke(Math.max(1, dp(1)), 0x33FFFFFF);
+                  v.setBackground(g);
               }
 
               // opens after holding for 1 second; the normal tap still works
@@ -5431,7 +5432,7 @@ jobs:
                   }
                   if (already) Toast.makeText(this, t("قبلاً در داک هست", "Already in the dock"), Toast.LENGTH_SHORT).show();
                   if (full) Toast.makeText(this, t("این صفحه داک پر است", "This dock page is full"), Toast.LENGTH_SHORT).show();
-                                    if (!changed) {
+                  if (!changed) {
                       dragKeys.clear();
                       dragFromDock = false;
                       return;
