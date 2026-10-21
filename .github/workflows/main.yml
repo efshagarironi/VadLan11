@@ -110,8 +110,10 @@ jobs:
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools">
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
               <uses-permission android:name="android.permission.VIBRATE" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -437,6 +439,174 @@ jobs:
           }
           EOF
 
+          cat > app/src/main/java/com/mylauncher/BubbleActs.java <<'EOF'
+          package com.mylauncher;
+
+          import android.app.AppOpsManager;
+          import android.app.usage.UsageEvents;
+          import android.app.usage.UsageStatsManager;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.content.pm.LauncherApps;
+          import android.content.pm.PackageManager;
+          import android.content.pm.ShortcutInfo;
+          import android.os.Process;
+          import java.util.ArrayList;
+          import java.util.LinkedHashSet;
+          import java.util.List;
+          import org.json.JSONArray;
+          import org.json.JSONObject;
+
+          // the bubble "actions": up to 20 saved ways of starting something inside an app
+          // (an app shortcut, the last screen of the app, or just the app itself)
+          public class BubbleActs {
+              static final int MAX = 20;
+
+              static class Act {
+                  String pkg, type, id, label;   // type: "sc" = app shortcut, "cmp" = app screen, "app" = plain launch
+                  long ts;                       // last time this action was saved / chosen
+              }
+
+              static Act[] load(SharedPreferences sp) {
+                  Act[] a = new Act[MAX];
+                  try {
+                      JSONArray arr = new JSONArray(sp.getString("bub_acts", "[]"));
+                      for (int i = 0; i < arr.length() && i < MAX; i++) {
+                          JSONObject o = arr.optJSONObject(i);
+                          if (o == null || !o.has("pkg")) continue;
+                          Act x = new Act();
+                          x.pkg = o.optString("pkg");
+                          x.type = o.optString("type", "app");
+                          x.id = o.optString("id", "");
+                          x.label = o.optString("label", "");
+                          x.ts = o.optLong("ts", 0);
+                          a[i] = x;
+                      }
+                  } catch (Exception e) { }
+                  return a;
+              }
+
+              static void save(SharedPreferences sp, Act[] a) {
+                  JSONArray arr = new JSONArray();
+                  try {
+                      for (int i = 0; i < MAX; i++) {
+                          JSONObject o = new JSONObject();
+                          Act x = a[i];
+                          if (x != null) {
+                              o.put("pkg", x.pkg);
+                              o.put("type", x.type);
+                              o.put("id", x.id == null ? "" : x.id);
+                              o.put("label", x.label == null ? "" : x.label);
+                              o.put("ts", x.ts);
+                          }
+                          arr.put(o);
+                      }
+                  } catch (Exception e) { }
+                  sp.edit().putString("bub_acts", arr.toString()).apply();
+              }
+
+              static int count(Act[] a) {
+                  int n = 0;
+                  for (Act x : a) if (x != null) n++;
+                  return n;
+              }
+
+              // apps that have at least one action, in slot order
+              static List<String> pkgs(Act[] a) {
+                  LinkedHashSet<String> s = new LinkedHashSet<>();
+                  for (Act x : a) if (x != null) s.add(x.pkg);
+                  return new ArrayList<>(s);
+              }
+
+              // the action that is used when the app name is tapped in the bubble list: the most recent one
+              static Act current(Act[] a, String pkg) {
+                  Act best = null;
+                  for (Act x : a)
+                      if (x != null && x.pkg.equals(pkg) && (best == null || x.ts > best.ts)) best = x;
+                  return best;
+              }
+
+              static String appLabel(Context c, String pkg) {
+                  try {
+                      PackageManager pm = c.getPackageManager();
+                      return pm.getApplicationInfo(pkg, 0).loadLabel(pm).toString();
+                  } catch (Throwable e) {
+                      return pkg;
+                  }
+              }
+
+              static boolean run(Context c, Act x) {
+                  try {
+                      if ("sc".equals(x.type)) {
+                          LauncherApps la = (LauncherApps) c.getSystemService(Context.LAUNCHER_APPS_SERVICE);
+                          la.startShortcut(x.pkg, x.id, null, null, Process.myUserHandle());
+                          return true;
+                      }
+                      if ("cmp".equals(x.type)) {
+                          Intent i = new Intent().setClassName(x.pkg, x.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          c.startActivity(i);
+                          return true;
+                      }
+                  } catch (Throwable e) { }
+                  try {
+                      Intent i = c.getPackageManager().getLaunchIntentForPackage(x.pkg);
+                      if (i != null) {
+                          i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          c.startActivity(i);
+                          return true;
+                      }
+                  } catch (Throwable e) { }
+                  return false;
+              }
+
+              // the shortcuts an app offers (needs this launcher to be the default home app)
+              static List<ShortcutInfo> shortcuts(Context c, String pkg) {
+                  List<ShortcutInfo> out = new ArrayList<>();
+                  try {
+                      LauncherApps la = (LauncherApps) c.getSystemService(Context.LAUNCHER_APPS_SERVICE);
+                      LauncherApps.ShortcutQuery q = new LauncherApps.ShortcutQuery();
+                      q.setPackage(pkg);
+                      q.setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC
+                              | LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST
+                              | LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED);
+                      List<ShortcutInfo> l = la.getShortcuts(q, Process.myUserHandle());
+                      if (l != null) for (ShortcutInfo s : l) if (s.isEnabled()) out.add(s);
+                  } catch (Throwable e) { }
+                  return out;
+              }
+
+              static boolean hasUsage(Context c) {
+                  try {
+                      AppOpsManager ao = (AppOpsManager) c.getSystemService(Context.APP_OPS_SERVICE);
+                      return ao.checkOpNoThrow("android:get_usage_stats", Process.myUid(), c.getPackageName())
+                              == AppOpsManager.MODE_ALLOWED;
+                  } catch (Throwable e) {
+                      return false;
+                  }
+              }
+
+              // the last screen of the app that came to the front since the given time (null = unknown)
+              static String lastScreen(Context c, String pkg, long since) {
+                  try {
+                      UsageStatsManager um = (UsageStatsManager) c.getSystemService(Context.USAGE_STATS_SERVICE);
+                      UsageEvents ev = um.queryEvents(Math.max(0, since - 2000), System.currentTimeMillis() + 2000);
+                      UsageEvents.Event e = new UsageEvents.Event();
+                      String last = null;
+                      while (ev.hasNextEvent()) {
+                          ev.getNextEvent(e);
+                          // 1 = the screen came to the front
+                          if (e.getEventType() == 1 && pkg.equals(e.getPackageName()) && e.getClassName() != null)
+                              last = e.getClassName();
+                      }
+                      return last;
+                  } catch (Throwable e) {
+                      return null;
+                  }
+              }
+          }
+          EOF
+
           cat > app/src/main/java/com/mylauncher/MockBubbleService.java <<'EOF'
           package com.mylauncher;
 
@@ -451,14 +621,23 @@ jobs:
           import android.graphics.Paint;
           import android.graphics.PixelFormat;
           import android.graphics.SweepGradient;
+          import android.graphics.drawable.GradientDrawable;
           import android.os.Build;
           import android.os.Handler;
           import android.os.IBinder;
           import android.os.Looper;
+          import android.os.SystemClock;
+          import android.text.TextUtils;
           import android.view.Gravity;
           import android.view.MotionEvent;
           import android.view.View;
           import android.view.WindowManager;
+          import android.widget.FrameLayout;
+          import android.widget.LinearLayout;
+          import android.widget.ScrollView;
+          import android.widget.TextView;
+          import android.widget.Toast;
+          import java.util.List;
 
           public class MockBubbleService extends Service {
               static MockBubbleService inst;
@@ -477,6 +656,7 @@ jobs:
               private Runnable collapseRunnable = new Runnable() {
                   @Override
                   public void run() {
+                      if (listRoot != null) return; // the action list is open: the bubble stays out
                       if (bubbleView != null && params != null) {
                           int sw = getResources().getDisplayMetrics().widthPixels;
                           boolean right = sp.getInt("mock_px", 70) > 50;
@@ -567,6 +747,196 @@ jobs:
                   startActivity(i);
               }
 
+              // ---------- bubble tap: launcher and / or the vertical list of app actions ----------
+              private FrameLayout listRoot;      // the list window (null = closed)
+              private LinearLayout listCard;
+              private WindowManager.LayoutParams listParams;
+              private long lastOutside = 0, downAt = 0;
+
+              private boolean fa() { return sp.getString("lang", "fa").equals("fa"); }
+
+              private String tr(String f, String e) { return fa() ? f : e; }
+
+              private void onBubbleTap() {
+                  if (listRoot != null) { closeList(); return; }
+                  // this very touch just closed the list (touch outside the list = on the bubble): do not open it again
+                  if (Math.abs(downAt - lastOutside) < 250) return;
+                  boolean lau = sp.getBoolean("bub_launcher", true);
+                  boolean act = sp.getBoolean("bub_act_on", false);
+                  boolean has = BubbleActs.pkgs(BubbleActs.load(sp)).size() > 0;
+                  if (act && has) openList(lau);
+                  else if (lau) openLauncher(false);
+              }
+
+              private boolean listWithLauncher = false;
+
+              private void openList(boolean withLauncher) {
+                  listWithLauncher = withLauncher;
+                  handler.removeCallbacks(collapseRunnable);
+                  applyPosition();
+                  bubbleView.setAlpha(sp.getInt("mock_alpha", 90) / 100f);
+                  try { wm.updateViewLayout(bubbleView, params); } catch (Exception e) {}
+
+                  listRoot = new FrameLayout(this) {
+                      @Override
+                      public boolean dispatchTouchEvent(MotionEvent ev) {
+                          if (ev.getAction() == MotionEvent.ACTION_OUTSIDE) {
+                              lastOutside = SystemClock.uptimeMillis();
+                              closeList();
+                              return true;
+                          }
+                          return super.dispatchTouchEvent(ev);
+                      }
+                  };
+                  listRoot.setLayoutDirection(fa() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+                  GradientDrawable g = new GradientDrawable();
+                  g.setCornerRadius(dpToPx(16));
+                  g.setColor(0xF2202024);
+                  g.setStroke(dpToPx(1), 0x33FFFFFF);
+                  listRoot.setBackground(g);
+                  ScrollView sv = new ScrollView(this);
+                  sv.setVerticalScrollBarEnabled(false);
+                  listCard = new LinearLayout(this);
+                  listCard.setOrientation(LinearLayout.VERTICAL);
+                  listCard.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
+                  sv.addView(listCard);
+                  listRoot.addView(sv, new FrameLayout.LayoutParams(-1, -1));
+
+                  listParams = new WindowManager.LayoutParams(
+                          -2, -2, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                          WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                                  | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                                  | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                          PixelFormat.TRANSLUCENT);
+                  listParams.gravity = Gravity.TOP | Gravity.LEFT;
+                  fillList(null);
+                  layoutList(true);
+              }
+
+              private void closeList() {
+                  if (listRoot != null) {
+                      try { wm.removeView(listRoot); } catch (Exception e) {}
+                      listRoot = null;
+                      listCard = null;
+                  }
+                  handler.removeCallbacks(collapseRunnable);
+                  handler.postDelayed(collapseRunnable, collapseDelay());
+              }
+
+              // measures the list and puts it below the bubble, on the same side of the screen
+              private void layoutList(boolean add) {
+                  if (listRoot == null || params == null) return;
+                  int sw = getResources().getDisplayMetrics().widthPixels;
+                  int sh = getResources().getDisplayMetrics().heightPixels;
+                  listCard.measure(View.MeasureSpec.makeMeasureSpec((int) (sw * 0.7f), View.MeasureSpec.AT_MOST),
+                          View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+                  int w = Math.max(dpToPx(150), listCard.getMeasuredWidth());
+                  int h = listCard.getMeasuredHeight();
+                  int gap = dpToPx(6), edge = dpToPx(24);
+                  int y = params.y + params.height + gap;
+                  int room = sh - y - edge;
+                  if (room < Math.min(h, dpToPx(160)) && params.y > room) {
+                      // not enough room below the bubble: open above it
+                      room = params.y - gap - edge;
+                      h = Math.min(h, room);
+                      y = params.y - gap - h;
+                  } else {
+                      h = Math.min(h, room);
+                  }
+                  boolean right = sp.getInt("mock_px", 70) > 50;
+                  listParams.width = w;
+                  listParams.height = Math.max(dpToPx(60), h);
+                  listParams.x = right ? sw - w - dpToPx(8) : dpToPx(8);
+                  listParams.y = Math.max(edge, y);
+                  try {
+                      if (add) wm.addView(listRoot, listParams);
+                      else wm.updateViewLayout(listRoot, listParams);
+                  } catch (Exception e) {}
+              }
+
+              private TextView listText(String s, float sp14, int color) {
+                  TextView tv = new TextView(this);
+                  tv.setText(s);
+                  tv.setTextSize(sp14);
+                  tv.setTextColor(color);
+                  tv.setSingleLine(true);
+                  tv.setEllipsize(TextUtils.TruncateAt.END);
+                  return tv;
+              }
+
+              private void addListItem(String dot, int dotColor, String text, Runnable click, Runnable longClick) {
+                  LinearLayout row = new LinearLayout(this);
+                  row.setGravity(Gravity.CENTER_VERTICAL);
+                  row.setPadding(dpToPx(12), dpToPx(11), dpToPx(12), dpToPx(11));
+                  if (dot != null) {
+                      TextView d = listText(dot, 12, dotColor);
+                      LinearLayout.LayoutParams dl = new LinearLayout.LayoutParams(-2, -2);
+                      dl.setMarginEnd(dpToPx(8));
+                      row.addView(d, dl);
+                  }
+                  row.addView(listText(text, 15, 0xFFFFFFFF), new LinearLayout.LayoutParams(-2, -2));
+                  row.setOnTouchListener((v, ev) -> {
+                      if (ev.getAction() == MotionEvent.ACTION_DOWN) v.setBackgroundColor(0x33FFFFFF);
+                      else if (ev.getAction() == MotionEvent.ACTION_UP || ev.getAction() == MotionEvent.ACTION_CANCEL)
+                          v.setBackgroundColor(0);
+                      return false;
+                  });
+                  row.setOnClickListener(v -> click.run());
+                  if (longClick != null) row.setOnLongClickListener(v -> { longClick.run(); return true; });
+                  listCard.addView(row, new LinearLayout.LayoutParams(-1, -2));
+              }
+
+              // sub == null: the apps that have actions; otherwise: the actions of that one app
+              private void fillList(final String sub) {
+                  if (listCard == null) return;
+                  listCard.removeAllViews();
+                  final BubbleActs.Act[] all = BubbleActs.load(sp);
+                  if (sub == null) {
+                      if (listWithLauncher) {
+                          addListItem(null, 0, "🏠 " + tr("لانچر", "Launcher"), () -> {
+                              closeList();
+                              openLauncher(false);
+                          }, null);
+                      }
+                      for (final String pkg : BubbleActs.pkgs(all)) {
+                          boolean on = sp.getBoolean("bub_on_" + pkg, false);
+                          addListItem("●", on ? 0xFF4CAF50 : 0x55FFFFFF, BubbleActs.appLabel(this, pkg), () -> {
+                              BubbleActs.Act cur = BubbleActs.current(BubbleActs.load(sp), pkg);
+                              if (cur != null && BubbleActs.run(this, cur)) {
+                                  // the same action again toggles it (connect / disconnect)
+                                  sp.edit().putBoolean("bub_on_" + pkg, !sp.getBoolean("bub_on_" + pkg, false)).apply();
+                              } else {
+                                  Toast.makeText(this, tr("اجرای عملکرد ممکن نشد", "Could not run the action"), Toast.LENGTH_SHORT).show();
+                              }
+                              closeList();
+                          }, () -> {
+                              // long press: pick which action of this app is used
+                              fillList(pkg);
+                              layoutList(false);
+                          });
+                      }
+                  } else {
+                      addListItem(null, 0, "‹ " + BubbleActs.appLabel(this, sub), () -> {
+                          fillList(null);
+                          layoutList(false);
+                      }, null);
+                      for (int i = 0; i < all.length; i++) {
+                          final BubbleActs.Act a = all[i];
+                          if (a == null || !a.pkg.equals(sub)) continue;
+                          final int slot = i;
+                          addListItem(String.valueOf(i + 1), 0xFF90CAF9, a.label.isEmpty() ? a.type : a.label, () -> {
+                              BubbleActs.Act[] cur = BubbleActs.load(sp);
+                              if (cur[slot] != null) {
+                                  cur[slot].ts = System.currentTimeMillis();
+                                  BubbleActs.save(sp, cur);
+                                  if (BubbleActs.run(this, cur[slot])) sp.edit().putBoolean("bub_on_" + sub, true).apply();
+                              }
+                              closeList();
+                          }, null);
+                      }
+                  }
+              }
+
               private void createBubble() {
                   int size = dpToPx(sp.getInt("mock_size", 56));
                   params = new WindowManager.LayoutParams(
@@ -621,6 +991,7 @@ jobs:
                                   ty = ev.getRawY();
                                   moved = false;
                                   longFired = false;
+                                  downAt = SystemClock.uptimeMillis();
                                   handler.postDelayed(longRun, 600);
                                   return true;
                               case MotionEvent.ACTION_MOVE:
@@ -628,6 +999,7 @@ jobs:
                                   if (!moved && (Math.abs(dx) > dpToPx(8) || Math.abs(dy) > dpToPx(8))) {
                                       moved = true;
                                       handler.removeCallbacks(longRun);
+                                      if (listRoot != null) closeList();
                                   }
                                   if (moved) {
                                       params.x = ix + (int) dx;
@@ -647,9 +1019,9 @@ jobs:
                                       py = Math.max(0, Math.min(100, py));
                                       sp.edit().putInt("mock_px", px).putInt("mock_py", py).apply();
                                   } else if (!longFired && ev.getAction() == MotionEvent.ACTION_UP) {
-                                      openLauncher(false);
+                                      onBubbleTap();
                                   }
-                                  handler.postDelayed(collapseRunnable, collapseDelay());
+                                  if (listRoot == null) handler.postDelayed(collapseRunnable, collapseDelay());
                                   return true;
                           }
                           return false;
@@ -672,6 +1044,10 @@ jobs:
                   super.onDestroy();
                   inst = null;
                   handler.removeCallbacksAndMessages(null);
+                  if (listRoot != null && wm != null) {
+                      try { wm.removeView(listRoot); } catch (Exception e) {}
+                      listRoot = null;
+                  }
                   if (bubbleView != null && wm != null) {
                       try { wm.removeView(bubbleView); } catch (Exception e) {}
                   }
@@ -714,7 +1090,7 @@ jobs:
           public class MainActivity extends Activity {
               static final int HOME = 0, SETTINGS = 1, BG = 2, BEHAVIOR = 3, LANG = 4, PICKER = 5,
                       DOCK = 6, ICON = 8, MOCK = 9, FOLDER = 10, BACKUP = 11, RESTORE = 12,
-                      FONT = 13, FGRP = 14, FPICK = 15, DOCKBG = 16, HPAGE = 17, HFBG = 18, MBG = 19, TBG = 20, TBAR = 21, MBOX = 22, SBOX = 23;
+                      FONT = 13, FGRP = 14, FPICK = 15, DOCKBG = 16, HPAGE = 17, HFBG = 18, MBG = 19, TBG = 20, TBAR = 21, MBOX = 22, SBOX = 23, ACTS = 24;
               static final int DLG = 0xFFEEEEEE;
               static final int REQ_IMG = 77, REQ_FIMG = 78, REQ_MIMG = 79, REQ_TIMG = 80;
 
@@ -951,6 +1327,9 @@ jobs:
               Map<String, List<View>> gears = new HashMap<>();
               String openFolder = null, pickTarget = null;
               String lastClosedFolder = null;
+              int folderDir = 1;
+              float swipeX0, swipeY0;
+              boolean swipeFired;
 
               List<AppItem> allApps = new ArrayList<>();
               List<String> added = new ArrayList<>();
@@ -985,6 +1364,14 @@ jobs:
                   loadDock();
                   fixDocked();
                   notifyBar();
+                  lastClosedFolder = sp.getString("lastClosed", null);
+                  if (sp.getBoolean("fpKeep", false)) {
+                      String kf = sp.getString("keepFolder", "");
+                      if (kf != null && !kf.isEmpty() && findFolder(kf) != null) {
+                          openFolder = kf;
+                          fromDock = findFolder(kf).docked;
+                      }
+                  }
                   checkMockIntent(getIntent());
                   // keep the shortcut tile state equal to the saved choice
                   try {
@@ -1022,6 +1409,27 @@ jobs:
               // (a closed folder can be touched: the new folder then replaces the open one)
               @Override
               public boolean dispatchTouchEvent(MotionEvent ev) {
+                  // swipe up on the icon pages (paged mode): opens the folder that was closed last, on any page
+                  if (page == HOME && pagedMode() && openFolder == null && !dragActive) {
+                      int act = ev.getActionMasked();
+                      if (act == MotionEvent.ACTION_DOWN) {
+                          swipeX0 = ev.getRawX();
+                          swipeY0 = ev.getRawY();
+                          swipeFired = false;
+                      } else if (act == MotionEvent.ACTION_MOVE && !swipeFired) {
+                          float dx = ev.getRawX() - swipeX0, dy = ev.getRawY() - swipeY0;
+                          boolean aboveDock = true;
+                          if (dockBoxV != null && dockBoxV.getHeight() > 0) {
+                              int[] dl = new int[2];
+                              dockBoxV.getLocationOnScreen(dl);
+                              aboveDock = swipeY0 < dl[1];
+                          }
+                          if (aboveDock && dy < -dp(40) && Math.abs(dy) > Math.abs(dx) * 1.3f) {
+                              swipeFired = true;
+                              openLastClosed();
+                          }
+                      }
+                  }
                   if (page == HOME && openFolder != null && ev.getActionMasked() == MotionEvent.ACTION_DOWN) {
                       if (closing) return true;
                       if (immersive && hit(dockBoxV, ev)) return super.dispatchTouchEvent(ev);
@@ -1049,6 +1457,10 @@ jobs:
                           }
                       }
                       if (!inside) {
+                          if (sp.getBoolean("fpKeep", false)) {
+                              if (hit(homeMenuV, ev) || hit(homePlusV, ev) || hit(countBarV, ev)) return super.dispatchTouchEvent(ev);
+                              return true;
+                          }
                           closeFolder();
                           return true;
                       }
@@ -1061,7 +1473,7 @@ jobs:
                   super.onNewIntent(in);
                   setIntent(in);
                   page = HOME;
-                  openFolder = null;
+                  if (!sp.getBoolean("fpKeep", false)) openFolder = null;
                   plusOpen = false;
                   folderSettings = false;
                   sel.clear();
@@ -1107,10 +1519,14 @@ jobs:
               @Override
               protected void onStart() {
                   super.onStart();
+                  instCache.clear();
+                  iconCache.clear();
+                  labelCache.clear();
                   sp.edit().putBoolean("open", true).apply();
                   MockBubbleService.launcherVisible = true;
                   MockBubbleService.refresh();
                   requestTile();
+                  finishPendingAct();
               }
 
               @Override
@@ -1158,6 +1574,9 @@ jobs:
                       show();
                   } else if (page == ICON) {
                       page = HPAGE;
+                      show();
+                  } else if (page == ACTS) {
+                      page = MOCK;
                       show();
                   } else if (page == MOCK) {
                       page = SETTINGS;
@@ -1418,7 +1837,8 @@ jobs:
                   SwipePanel(Context c) { super(c); }
 
                   boolean sideOk(float dx) {
-                      if (sp.getBoolean("fpAnim", true) || !fromDock || openFolder == null) return false;
+                      boolean loopOn = sp.getBoolean("fpLoop", false);
+                      if ((!loopOn && sp.getBoolean("fpAnim", true) && sp.getInt("fdAnim", -1) < 0) || !fromDock || openFolder == null) return false;
                       return dockNeighbor(openFolder, dx > 0) != null;
                   }
 
@@ -1457,7 +1877,7 @@ jobs:
                               } else if (mode == 2 && Math.abs(dx) > dp(60)) {
                                   fired = true;
                                   String nid = dockNeighbor(openFolder, dx > 0);
-                                  if (nid != null) openDockFolder(nid);
+                                  if (nid != null) { folderDir = dx > 0 ? 1 : -1; openDockFolder(nid); }
                               }
                           } else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) {
                               mode = 0;
@@ -1684,17 +2104,40 @@ jobs:
                   return f.name.isEmpty() ? t("پوشه", "Folder") : f.name;
               }
 
+              Map<String, Boolean> instCache = new HashMap<>();
+              Map<String, Drawable> iconCache = new HashMap<>();
+              Map<String, String> labelCache = new HashMap<>();
+
               boolean installed(String p) {
+                  Boolean b = instCache.get(p);
+                  if (b == null) { b = installedRaw(p); instCache.put(p, b); }
+                  return b;
+              }
+
+              Drawable icon(String p) {
+                  if (iconCache.containsKey(p)) return iconCache.get(p);
+                  Drawable d = iconRaw(p);
+                  if (d != null) iconCache.put(p, d);
+                  return d;
+              }
+
+              String label(String p) {
+                  String s = labelCache.get(p);
+                  if (s == null) { s = labelRaw(p); labelCache.put(p, s); }
+                  return s;
+              }
+
+              boolean installedRaw(String p) {
                   try { getPackageManager().getApplicationInfo(p, 0); return true; }
                   catch (Exception e) { return false; }
               }
 
-              Drawable icon(String p) {
+              Drawable iconRaw(String p) {
                   try { return getPackageManager().getApplicationIcon(p); }
                   catch (Exception e) { return null; }
               }
 
-              String label(String p) {
+              String labelRaw(String p) {
                   try {
                       PackageManager pm = getPackageManager();
                       return pm.getApplicationLabel(pm.getApplicationInfo(p, 0)).toString();
@@ -1945,7 +2388,7 @@ jobs:
                   box.setOrientation(LinearLayout.VERTICAL);
                   final int dszF = sp.getInt("home_btn_sz", 40);
                   // counters settings
-                  box.addView(accordionGroup(0xFF26A69A, "🔢", t("کادرهای وسط نوار ابزار", "Toolbar center boxes"), fg,
+                  box.addView(accordionGroup(0xFF26A69A, "🔢", t("داده‌ها نوار ابزار", "Toolbar data"), fg,
                           countersContent(fg)));
                   // placement of the two icons: first lever = horizontal, second = vertical
                   box.addView(accordionGroupFaded(0xFF00ACC1, "↔", t("جای‌گیری آیکون‌ها", "Icons placement"), fg, 0.6f, () -> new View[]{
@@ -2428,7 +2871,15 @@ jobs:
                   return new int[]{top + dp(10), bot};
               }
 
+              void saveKeep() {
+              if (sp.getBoolean("fpKeep", false)) {
+                  String kv = openFolder == null ? "" : openFolder;
+                  if (!kv.equals(sp.getString("keepFolder", ""))) sp.edit().putString("keepFolder", kv).apply();
+              }
+          }
+
               void show() {
+                  saveKeep();
                   boolean mp = menuPage();
                   int fg = 0xFFFFFFFF;
                   if (mp && mbgBmp == null && isLight(solid(mbg()))) fg = 0xFF111111;
@@ -2472,6 +2923,7 @@ jobs:
                   else if (page == LANG) v = langPage(fg);
                   else if (page == PICKER) v = pickerPage(fg);
                   else if (page == MOCK) v = mockPage(fg);
+                  else if (page == ACTS) v = actsPage(fg);
                   else if (page == BACKUP) v = backupPage(fg);
                   else if (page == RESTORE) v = restorePage(fg);
                   else v = homePage(fg);
@@ -2586,7 +3038,7 @@ jobs:
                   mid.setClipChildren(false);
                   // home frame: a panel like the immersive folder, from the top of the dock up to the top icons
                   final boolean framed = sp.getBoolean("hfOn", false);
-                  if (framed) {
+                  if (framed && !(pagedMode() && sp.getBoolean("hfFx", false))) {
                       frameV = new View(this);
                       frameV.setBackground(new FrameDrawable(sp.getInt("hfBg", 0x6628282C), false,
                               dp(26), dp(3), hfSrc, sp.getInt("hfZoom", 100) / 100f, sp.getInt("hfPx", 50) / 100f,
@@ -2718,6 +3170,7 @@ jobs:
                       if (f != null) folderCount = f.apps.size();
                   }
 
+                  if (sp.getBoolean("stackOn", false)) { c.addView(stackBox(fg)); return c; }
                   boolean clkOn = sp.getBoolean("clockOn", false), dtOn = sp.getBoolean("dateOn", false);
                   if (clkOn || dtOn) {
                       // clock on: folder counter -> clock (centered), icon counter removed
@@ -2788,7 +3241,7 @@ jobs:
               void setDate(TextView tv) {
                   Calendar c = Calendar.getInstance();
                   int[] j = g2j(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
-                  tv.setText(String.format(Locale.US, "%02d" + DATE_SEP + "%02d" + DATE_SEP + "%02d",
+                  tv.setText(String.format(Locale.US, "%02d" + dateSep() + "%02d" + dateSep() + "%02d",
                           j[0] % 100, j[1], j[2]));
               }
 
@@ -2839,6 +3292,163 @@ jobs:
 
               View dateBox(int fg) { return timeBox(fg, 1.0f, 0.85f, true); }
 
+              static final String[] ANIM_FA = {"کشویی", "محو شدن", "زوم", "ریزش", "کرکره‌ای", "لایه‌ای (Stack)", "ورق‌زدن (Flip)", "شیشه‌ای (Glass)", "زوم عمقی (Zoom)", "چرخش سه‌بعدی (3D)", "مکعب سه‌بعدی (3D Cube)"};
+              static final String[] ANIM_EN = {"Slide", "Fade", "Zoom", "Drop", "Shutter", "Stack", "Flip", "Glass", "Zoom depth", "3D flip", "3D cube"};
+              static final int[] ANIM_IDS = {0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12};
+
+              String dateSep() { return sp.getBoolean("momayyez", false) ? "\u066B" : DATE_SEP; }
+
+              // clock / date / stacked / decimal-mark options (rebuilt in place when one is tapped)
+              LinearLayout timeSection(final int fg) {
+                  LinearLayout sec = new LinearLayout(this);
+                  sec.setOrientation(LinearLayout.VERTICAL);
+                  timeRows(sec, fg);
+                  return sec;
+              }
+
+              void timeRows(final LinearLayout sec, final int fg) {
+                  sec.removeAllViews();
+                  sec.addView(timeOpt(sec, fg, 0xFF00ACC1, "🕰", t("ساعت", "Clock"),
+                          t("ساعت دیجیتال به جای کادر شمارش پوشه، در وسط نوار ابزار",
+                                  "Digital clock instead of the folder counter, in the toolbar center"), "clockOn"));
+                  sec.addView(timeOpt(sec, fg, 0xFF26C6DA, "📅", t("تاریخ", "Date"),
+                          t("تاریخ شمسی به جای کادر شمارش آیکون، سمت راست ساعت",
+                                  "Jalali date instead of the icon counter, right of the clock"), "dateOn"));
+                  sec.addView(timeOpt(sec, fg, 0xFF7E57C2, "▤", t("ساعت و تاریخ", "Clock and date"),
+                          t("ساعت بزرگ و تاریخ کوچک‌تر و کم‌رنگ‌تر زیر آن، در بالای صفحه اصلی",
+                                  "Big clock with a smaller, fainter date under it"), "stackOn"));
+                  sec.addView(timeOpt(sec, fg, 0xFFFF7043, "٫", t("ممیز", "Decimal mark"),
+                          t("جداکننده‌های تاریخ به ممیز (٫) تبدیل شوند",
+                                  "Date separators become the decimal mark (٫)"), "momayyez"));
+                  sec.addView(accordionRow(0xFF8BC34A, "↕", t("فاصله تاریخ و ساعت", "Clock and date gap"),
+                          "stackGapUm", -3000, 3000, 0, " µm", fg, null));
+              }
+
+              View timeOpt(final LinearLayout sec, final int fg, int dot, String sym, String title, String sub, final String key) {
+                  View r = row(dot, sym, title, sub, sp.getBoolean(key, false) ? 3 : 2, fg, null);
+                  r.setOnClickListener(v -> {
+                      boolean now = !sp.getBoolean(key, false);
+                      SharedPreferences.Editor ed = sp.edit().putBoolean(key, now);
+                      if (now && (key.equals("clockOn") || key.equals("dateOn"))) ed.putBoolean("stackOn", false);
+                      if (now && key.equals("stackOn")) ed.putBoolean("clockOn", false).putBoolean("dateOn", false);
+                      ed.apply();
+                      timeRows(sec, fg);
+                  });
+                  return r;
+              }
+
+              // one box: big clock on top, smaller and fainter date under it (same look as the other boxes)
+              View stackBox(int fg) {
+                  LinearLayout b = new LinearLayout(this);
+                  b.setOrientation(LinearLayout.VERTICAL);
+                  b.setGravity(Gravity.CENTER);
+                  b.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+                  GradientDrawable g = new GradientDrawable();
+                  g.setCornerRadius(dp(16));
+                  g.setColor(sp.getInt("box_bg", 0x33FFFFFF));
+                  g.setStroke(Math.max(1, dp(1)), 0x33FFFFFF);
+                  b.setBackground(g);
+                  LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                          dp(sc(sp.getInt("box_w", 62))), dp(sc(sp.getInt("box_h", 40)) * 3 / 2));
+                  lp.setMargins(dp(2), 0, dp(2), 0);
+                  b.setLayoutParams(lp);
+                  int ts = Math.max(7, sc(sp.getInt("box_ts", 18)));
+
+                  TextView ck = new TextView(this);
+                  ck.setGravity(Gravity.CENTER);
+                  ck.setSingleLine(true);
+                  ck.setIncludeFontPadding(false);
+                  ck.setTextSize(ts * 0.95f);
+                  ck.setAutoSizeTextTypeUniformWithConfiguration(6, ts, 1, TypedValue.COMPLEX_UNIT_SP);
+                  ck.setTextColor(sp.getInt("box_tc", fg));
+                  ck.setTypeface(weightFace(sp.getInt("box_tw", 3)));
+                  b.addView(ck, new LinearLayout.LayoutParams(-1, 0, 1.2f));
+
+                  TextView dt = new TextView(this);
+                  dt.setGravity(Gravity.CENTER);
+                  dt.setSingleLine(true);
+                  dt.setIncludeFontPadding(false);
+                  dt.setTextSize(ts * 0.6f);
+                  dt.setAutoSizeTextTypeUniformWithConfiguration(6, Math.max(7, ts * 6 / 10), 1, TypedValue.COMPLEX_UNIT_SP);
+                  dt.setTextColor(sp.getInt("box_tc", fg));
+                  dt.setAlpha(0.65f);
+                  dt.setTypeface(weightFace(sp.getInt("box_tw", 3)));
+                  LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(-1, 0, 0.8f);
+                  dlp.topMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, sp.getInt("stackGapUm", 0) / 1000f, getResources().getDisplayMetrics());
+                  b.addView(dt, dlp);
+
+                  setClock(ck);
+                  startTick(ck, false);
+                  setDate(dt);
+                  startTick(dt, true);
+                  longOne(b, () -> boxMenu());
+                  return b;
+              }
+
+              // position of one page or panel: rel 0 = visible, +1 = one step to the right, -1 = one step to the left
+              void applyPageTransform(View v, float rel, int anim, int W, int H) {
+                  float a = Math.abs(rel);
+                  int pw = v.getWidth() > 0 ? v.getWidth() : W;
+                  int ph = v.getHeight() > 0 ? v.getHeight() : H;
+                  v.setCameraDistance(12000f * getResources().getDisplayMetrics().density);
+                  float tx = -rel * W, ty = 0, al = 1f, scx = 1f, scy = 1f, rot = 0, rotY = 0, tz = 0;
+                  v.setPivotX(pw / 2f);
+                  v.setPivotY(ph / 2f);
+                  switch (anim) {
+                      case 1: tx = 0; al = Math.max(0f, 1f - a); break;                       // fade
+                      case 2: tx = 0; scx = Math.max(0.4f, 1f - a * 0.5f); scy = scx; al = Math.max(0f, 1f - a); break; // zoom
+                      case 3: ty = a * H * 0.25f; al = Math.max(0f, 1f - a); break;           // drop
+                      case 4: scx = Math.max(0.2f, 1f - a * 0.6f); break;                     // shutter
+                      case 5: scx = scy = Math.max(0.8f, 1f - a * 0.1f); tz = -a * 20f; break; // stack
+                      case 6: tx = 0; rotY = -rel * 90f; break;                               // flip
+                      case 7: tx = 0; v.setPivotX(rel > 0 ? 0 : pw); rotY = -rel * 60f; break; // page
+                      case 8: scx = scy = Math.max(0.75f, 1f - a * 0.25f); tz = -a * 40f; tx = -rel * W * 0.7f; al = Math.max(0f, 1f - a * 0.4f); break; // depth
+                      case 9: tx = -rel * W * 0.5f; scx = scy = Math.max(0.9f, 1f - a * 0.1f); al = Math.max(0f, 1f - a); break; // glass
+                      case 10: tx = 0; scx = scy = 1f + a * 0.3f; al = Math.max(0f, 1f - a); break; // zoom depth
+                      case 11: rotY = rel * 70f; break;                                       // 3d flip
+                      case 12: tx = 0; v.setPivotX(rel > 0 ? 0 : pw); rotY = rel * 90f; break; // 3d cube
+                      default: break;                                                         // slide
+                  }
+                  v.setTranslationX(tx);
+                  v.setTranslationY(ty);
+                  v.setTranslationZ(tz);
+                  v.setRotation(rot);
+                  v.setRotationY(rotY);
+                  v.setScaleX(scx);
+                  v.setScaleY(scy);
+                  v.setAlpha(al);
+              }
+
+              // list of transition animations under "Paged mode off" on the home settings page
+              // rows of the effect list; withDefault adds a first row that keeps the old behaviour (folders only)
+              View[] animRows(final int fg, final String key, boolean withDefault) {
+                  int cur = sp.getInt(key, withDefault ? -1 : 0);
+                  List<View> items = new ArrayList<>();
+                  if (withDefault) {
+                      items.add(row(0xFF78909C, "•", t("پیش‌فرض", "Default"), null, cur == -1 ? 3 : 2, fg,
+                              v -> { sp.edit().putInt(key, -1).apply(); show(); }));
+                  }
+                  for (int i = 0; i < ANIM_FA.length; i++) {
+                      final int idx = ANIM_IDS[i];
+                      items.add(row(0xFF26A69A, "▶", t(ANIM_FA[i], ANIM_EN[i]), null, cur == ANIM_IDS[i] ? 3 : 2, fg,
+                              v -> { sp.edit().putInt(key, idx).apply(); show(); }));
+                  }
+                  return items.toArray(new View[0]);
+              }
+
+              // home settings: effects (boxes are a little fainter)
+              View transAnimGroup(final int fg) {
+                  return accordionGroupFaded(0xFF26A69A, "🎞", t("افکت ها", "Effects"), fg, 0.6f,
+                          () -> animRows(fg, "pgAnim", false));
+              }
+
+              boolean onScreen(View v) {
+                  int[] l = new int[2];
+                  v.getLocationOnScreen(l);
+                  int sw = getResources().getDisplayMetrics().widthPixels;
+                  return l[0] >= 0 && l[0] + v.getWidth() <= sw;
+              }
+
               // a tap does nothing; the settings open only after holding for 1 second
               void longOne(View v, final Runnable r) {
                   final Runnable fire = () -> { vib(25); r.run(); };
@@ -2872,21 +3482,13 @@ jobs:
               LinearLayout countersBoxes(int fg) {
                   LinearLayout box = new LinearLayout(this);
                   box.setOrientation(LinearLayout.VERTICAL);
-                  box.addView(accordionGroup(0xFF00ACC1, "🕒", t("زمان", "Time"), fg,
-                          toggleRow(0xFF00ACC1, "🕰", t("ساعت", "Clock"),
-                                  t("ساعت دیجیتال به جای کادر شمارش پوشه، در وسط نوار ابزار",
-                                          "Digital clock instead of the folder counter, in the toolbar center"),
-                                  "clockOn", false, fg),
-                          toggleRow(0xFF26C6DA, "📅", t("تاریخ", "Date"),
-                                  t("تاریخ شمسی به جای کادر شمارش آیکون، سمت راست ساعت",
-                                          "Jalali date instead of the icon counter, right of the clock"),
-                                  "dateOn", false, fg)));
-                  // placement of the two counters together: first lever = horizontal, second = vertical
+                                    // placement of the two counters together: first lever = horizontal, second = vertical
                   box.addView(accordionGroup(0xFF00ACC1, "↔", t("جای‌گیری", "Placement"), fg,
                           slider(t("جابجایی طولی", "Horizontal move"), "box_px", -100, 100, 0, " dp", fg, null),
                           slider(t("جابجایی عرضی", "Vertical move"), "box_py", -30, 30, 0, " dp", fg, null)));
+                  box.addView(timeSection(fg));
                   box.addView(accordionRow(0xFF2196F3, "📐", t("عرض کادرها", "Boxes width"), "box_w", 20, 140, 62, " dp", fg, null));
-                  box.addView(accordionRow(0xFF2196F3, "📐", t("ارتفاع کادرها", "Boxes height"), "box_h", 28, 80, 40, " dp", fg, null));
+                  box.addView(accordionRow(0xFF2196F3, "📐", t("ارتفاع کادرها", "Boxes height"), "box_h", 10, 50, 40, " dp", fg, null));
                   box.addView(accordionRow(0xFF4CAF50, "🔤", t("اندازه اعداد", "Numbers size"), "box_ts", 10, 40, 18, " sp", fg, null));
                   box.addView(accordionRow(0xFFFF9800, "⚖", t("کلفتی اعداد (۰ تا ۳)", "Numbers weight (0 to 3)"), "box_tw", 0, 3, 3, "", fg, null));
                   box.addView(row(0xFFE91E63, "🎨", t("رنگ و شفافیت کادرها", "Boxes color and transparency"), null, 0, fg,
@@ -3504,12 +4106,14 @@ jobs:
 
                   void layoutPages() {
                       int W = getWidth();
+                      int H = getHeight();
                       if (W <= 0) return;
+                      int anim = sp.getInt("pgAnim", 0);
                       for (int i = 0; i < n; i++) {
                           if (pages[i] == null) continue;
                           float rel = i - pos;
                           rel -= n * Math.round(rel / n);
-                          pages[i].setTranslationX(-rel * W);
+                          applyPageTransform(pages[i], rel, anim, W, H);
                           pages[i].setVisibility(Math.abs(rel) < 1.01f ? View.VISIBLE : View.INVISIBLE);
                       }
                   }
@@ -3724,6 +4328,11 @@ jobs:
                       GridPage page = new GridPage(this, rowsBox, pgRows, dp(8),
                               sp.getBoolean("hfOn", false) ? dp(16) : dockReserve() + dp(20), cH);
                       page.setClipChildren(false);
+                      if (sp.getBoolean("hfFx", false) && sp.getBoolean("hfOn", false)) {
+                          page.setBackground(new FrameDrawable(sp.getInt("hfBg", 0x6628282C), false, dp(26), dp(3), hfSrc,
+                                  sp.getInt("hfZoom", 100) / 100f, sp.getInt("hfPx", 50) / 100f,
+                                  sp.getInt("hfPy", 50) / 100f, sp.getInt("hfFade", 0)));
+                      }
                       final int pi = p;
                       page.setOnDragListener((w, ev) -> {
                           if (ev.getAction() == DragEvent.ACTION_DROP) {
@@ -3964,6 +4573,16 @@ jobs:
                           for (int k = i + 1; k < l.size(); k++)
                               if (l.get(k).startsWith("folder:") && findFolder(l.get(k).substring(7)) != null) return l.get(k).substring(7);
                       }
+                      // endless rotation: after the last folder comes the first one, before the first comes the last
+                      if (sp.getBoolean("fpLoop", false)) {
+                          if (left) {
+                              for (int k = l.size() - 1; k > i; k--)
+                                  if (l.get(k).startsWith("folder:") && findFolder(l.get(k).substring(7)) != null) return l.get(k).substring(7);
+                          } else {
+                              for (int k = 0; k < i; k++)
+                                  if (l.get(k).startsWith("folder:") && findFolder(l.get(k).substring(7)) != null) return l.get(k).substring(7);
+                          }
+                      }
                       return null;
                   }
                   return null;
@@ -4119,7 +4738,10 @@ jobs:
 
               void closeFolder() {
                   if (closing) return;
-                  if (openFolder != null) lastClosedFolder = openFolder;
+                  if (openFolder != null) {
+                      lastClosedFolder = openFolder;
+                      sp.edit().putString("lastClosed", openFolder).apply();
+                  }
                   if (curPanel != null && folderApply != null) {
                       final Consumer<Float> ap = folderApply;
                       final View pnl = curPanel;
@@ -4143,6 +4765,7 @@ jobs:
                           public void onAnimationEnd(Animator an) {
                               closing = false;
                               openFolder = null;
+                              saveKeep();
                               editName = false;
                               folderSettings = false;
                               // no full rebuild (it made the last frames stutter): only tidy up in place
@@ -4474,12 +5097,34 @@ jobs:
               void openLastClosed() {
                   if (page != HOME || openFolder != null || lastClosedFolder == null) return;
                   if (findFolder(lastClosedFolder) == null) return;
+                  View box = null;
                   List<View> cl = cells.get("folder:" + lastClosedFolder);
-                  if (cl == null) return;
-                  for (View c : cl) {
-                      View b = findTag(c, "fb");
-                      if (b != null) { openFolderFrom(b, lastClosedFolder, false); return; }
+                  if (cl != null) {
+                      for (View c : cl) {
+                          View b = findTag(c, "fb");
+                          if (b != null) { box = b; break; }
+                      }
                   }
+                  if (box != null && box.getWidth() > 0 && onScreen(box)) {
+                      openFolderFrom(box, lastClosedFolder, false);
+                      return;
+                  }
+                  // the folder is on another page: it grows out of the middle of the screen
+                  DisplayMetrics dm = getResources().getDisplayMetrics();
+                  int s = dp(sp.getInt("folderSz", 56));
+                  snapPanel = null;
+                  snapTabs = null;
+                  fromDock = false;
+                  openW = s;
+                  openH = s;
+                  openCx = dm.widthPixels / 2;
+                  openCy = dm.heightPixels / 2;
+                  openFolder = lastClosedFolder;
+                  editName = false;
+                  folderSettings = false;
+                  animSettings = false;
+                  animFolder = true;
+                  show();
               }
 
               // ---- plus menu: grows out of the + button and shrinks back into it ----
@@ -4569,7 +5214,6 @@ jobs:
                   r.setOnClickListener(c);
                   return r;
               }
-
               void addFolderDialog(final List<String> initial) {
                   final EditText et = new EditText(this);
                   et.setHint(t("نام پوشه", "Folder name"));
@@ -4629,6 +5273,23 @@ jobs:
                       sp.edit().putBoolean("fpNoBox", !noBox).apply();
                       show();
                   }));
+                  final boolean keepF = sp.getBoolean("fpKeep", false);
+                  sb.addView(row(0xFF43A047, "📌", t("حفظ پوشه", "Keep folder open"),
+                          t("پوشه باز تا زمانی که خودت می‌بندی باز می‌ماند، حتی بعد از بستن لانچر",
+                                  "The open folder stays open until you close it, even after the launcher was closed"),
+                          keepF ? 3 : 2, fg, w -> {
+                      sp.edit().putBoolean("fpKeep", !keepF).commit();
+                      show();
+                  }));
+                  // endless rotation: swipe left / right on an open dock folder moves to the next folder, round and round
+                  final boolean loopOn = sp.getBoolean("fpLoop", false);
+                  sb.addView(row(0xFF00ACC1, "∞", t("چرخش نامحدود", "Endless rotation"),
+                          t("با کشیدن انگشت به چپ و راست روی پوشه باز، به پوشه بعدی می‌روید؛ بعد از آخرین پوشه دوباره اولی باز می‌شود",
+                                  "Swipe left / right on an open folder to move to the next one; after the last folder the first opens again"),
+                          loopOn ? 3 : 2, fg, w -> {
+                      sp.edit().putBoolean("fpLoop", !loopOn).apply();
+                      show();
+                  }));
                   // animation: on = the grow animation plays every time; off = it plays once, then crossfade
                   final boolean animOn = sp.getBoolean("fpAnim", true);
                   sb.addView(row(0xFFEC407A, "✨", t("انیمیشن", "Animation"),
@@ -4646,6 +5307,8 @@ jobs:
                                   show();
                               })));
                   }
+                  sb.addView(accordionGroupFaded(0xFFEC407A, "🎞", t("افکت ها", "Effects"), fg, 0.6f,
+                          () -> animRows(fg, "fdAnim", true)));
                   final boolean closeOnLaunch = sp.getBoolean("fpCloseOnLaunch", false);
                   sb.addView(row(0xFFE53935, "🔒", t("بستن پوشه", "Close Folder"),
                           t("بستن پوشه بعد از انتخاب برنامه", "Close folder after launching app"),
@@ -4828,7 +5491,17 @@ jobs:
                   return c;
               }
 
-              View folderPopup(final int fg) {
+              View folderBoxOf(String id) {
+              List<View> cl = cells.get("folder:" + id);
+              if (cl == null) return null;
+              for (View c : cl) {
+                  View b = findTag(c, "fb");
+                  if (b != null) return b;
+              }
+              return null;
+          }
+
+          View folderPopup(final int fg) {
                   final Item f = findFolder(openFolder);
                   final FrameLayout wrap = new FrameLayout(this);
                   if (f == null) { openFolder = null; return wrap; }
@@ -4846,7 +5519,7 @@ jobs:
                   // replacing one open folder by another (popup or immersive): the old one stays as a picture and fades out
                   final boolean switching = anim && sPanel != null && (!full || (sTabs != null && ov != null));
                   // animation option off: replacing one folder by another is a smooth crossfade
-                  final boolean xfade = switching && !sp.getBoolean("fpAnim", true);
+                  final boolean xfade = switching && (!sp.getBoolean("fpAnim", true) || sp.getInt("fdAnim", -1) >= 0);
                   // the neck between the open folder and the closed one in the dock only shows when the closed one stays visible
                   final boolean bridgeOn = full && fromDock && !sp.getBoolean("fpHideSmall", true);
                   final float prevCxF = prevCx;
@@ -5025,6 +5698,18 @@ jobs:
                   final int[] ovl = new int[2];
                   if (anim) panel.setAlpha(0f);
                   panel.post(() -> {
+                      if (!anim) {
+                          // no opening animation (e.g. restored after a fresh start): use the closed box as origin
+                          View kb = folderBoxOf(f.id);
+                          if (kb != null && kb.getWidth() > 0) {
+                              int[] bl = new int[2];
+                              kb.getLocationOnScreen(bl);
+                              openCx = bl[0] + kb.getWidth() / 2;
+                              openCy = bl[1] + kb.getHeight() / 2;
+                              openW = Math.max(dp(20), kb.getWidth());
+                              openH = Math.max(dp(20), kb.getHeight());
+                          }
+                      }
                       int[] wl = new int[2];
                       wrap.getLocationOnScreen(wl);
                       final float pcx = wl[0] + panel.getLeft() + panel.getWidth() / 2f;
@@ -5156,6 +5841,11 @@ jobs:
                                   float wf = Math.min(half + Math.min(top0 - bot, half * 1.2f + dp(6)), avail);
                                   bridgeV.set(true, bcx, bot, top0, half, Math.max(half, wf), bc1, bc2);
                               }
+                          }
+                          if (xfade && opening[0] && sp.getInt("fdAnim", -1) >= 0) {
+                              int trA = sp.getInt("fdAnim", -1);
+                              applyPageTransform(panel, folderDir * (1f - p), trA, dm.widthPixels, dm.heightPixels);
+                              if (gPanel != null) applyPageTransform(gPanel, -folderDir * p, trA, dm.widthPixels, dm.heightPixels);
                           }
                       };
                       folderApply = ap;
@@ -5648,6 +6338,11 @@ jobs:
                                   "On: one page that scrolls down. Off: several pages that turn left and right"),
                           "hpScroll", true, fg, () -> { onPagesToggled(); show(); }));
                   // icon settings open right here, in lighter glass boxes
+                  r.addView(toggleRow(0xFF7E57C2, "▣", t("افکت کادر", "Frame effect"),
+                          t("افکت صفحه روی کل کادر صفحه اصلی اجرا می‌شود و آیکون‌ها با کادر جابجا می‌شوند (نیاز به صفحات افقی و کادر روشن)",
+                                  "The page effect runs on the whole home frame and the icons move with it (needs paged mode and frame on)"),
+                          "hfFx", false, fg));
+                  if (pagedMode()) r.addView(transAnimGroup(fg));
                   r.addView(accordionGroupFaded(0xFFAB47BC, "🧩", t("آیکون", "Icon"), fg, 0.6f, () -> iconItems(fg)));
                   return wrapScroll(r);
               }
@@ -5783,6 +6478,29 @@ jobs:
                       }
                   };
 
+                  // what the bubble does when it is tapped: open the launcher and / or the list of app actions
+                  final boolean bubLau = sp.getBoolean("bub_launcher", true);
+                  final boolean bubAct = sp.getBoolean("bub_act_on", false);
+                  r.addView(accordionGroup(0xFF00897B, "💬", t("حباب", "Bubble"), fg,
+                          row(0xFF3D7BF7, "🏠", t("لانچر", "Launcher"),
+                                  t("با زدن روی حباب، برنامه لانچر باز شود", "Tapping the bubble opens the launcher app"),
+                                  bubLau ? 3 : 2, fg, v -> {
+                              sp.edit().putBoolean("bub_launcher", !bubLau).apply();
+                              show();
+                          }),
+                          row(0xFFEF6C00, "⚡", t("عملکرد", "Actions"),
+                                  t("با زدن روی حباب، لیست عملکردها باز شود؛ با زدن روی نام برنامه فقط آخرین عملکرد آن اجرا می‌شود",
+                                          "Tapping the bubble opens the action list; tapping an app name runs only its last action"),
+                                  bubAct ? 3 : 2, fg, v -> {
+                              sp.edit().putBoolean("bub_act_on", !bubAct).apply();
+                              show();
+                          }),
+                          row(0xFF8E24AA, "📝", t("ثبت عملکردها", "Record actions"),
+                                  BubbleActs.count(BubbleActs.load(sp)) + " / " + BubbleActs.MAX,
+                                  0, fg, v -> {
+                              page = ACTS;
+                              show();
+                          })));
                   r.addView(accordionRow(0xFF2196F3, "📐", t("سایز حباب", "Bubble Size"), "mock_size", 30, 100, 56, " dp", fg, updateMock));
                   r.addView(accordionRow(0xFF4CAF50, "💧", t("شفافیت حباب", "Bubble Opacity"), "mock_alpha", 20, 100, 90, "%", fg, updateMock));
                   r.addView(accordionRow(0xFFFFB300, "⏱", t("سرعت", "Speed"), "mock_speed", 50, 2000, 2000, " ms", fg, updateMock));
@@ -5800,6 +6518,165 @@ jobs:
                   }));
 
                   return wrapScroll(r);
+              }
+
+              // ---------- bubble actions: up to 20 saved actions ----------
+              View actsPage(final int fg) {
+                  LinearLayout r = vbox();
+                  r.addView(topBar(t("عملکردهای حباب", "Bubble actions"), fg));
+                  TextView hint = new TextView(this);
+                  hint.setText(t("هر جایگاه یک عملکرد از یک برنامه است. اگر برنامه میان‌بر (Shortcut) داشته باشد از لیست آن انتخاب می‌کنید؛ در غیر این صورت برنامه باز می‌شود و آخرین صفحه‌ای که در آن بودید ثبت می‌شود. در حباب، زدن روی نام برنامه آخرین عملکرد آن را اجرا می‌کند و زدن دوباره، همان عملکرد را دوباره اجرا می‌کند. نگه داشتن روی نام برنامه، انتخاب بین عملکردهای آن را نشان می‌دهد.",
+                          "Each slot is one action of one app. If the app has shortcuts you pick one from its list; otherwise the app opens and the last screen you were in is saved. In the bubble, tapping an app name runs its last action and tapping again runs it again. Long-press an app name to choose between its actions."));
+                  hint.setTextSize(12);
+                  hint.setTextColor(fg);
+                  hint.setAlpha(0.65f);
+                  hint.setPadding(dp(4), dp(10), dp(4), 0);
+                  r.addView(hint);
+                  final BubbleActs.Act[] acts = BubbleActs.load(sp);
+                  for (int i = 0; i < BubbleActs.MAX; i++) {
+                      final int slot = i;
+                      BubbleActs.Act a = acts[i];
+                      if (a == null) {
+                          r.addView(row(0xFF9E9E9E, "+", (i + 1) + ". " + t("ثبت عملکرد", "Record action"),
+                                  null, 0, fg, v -> actSlotClick(slot)));
+                      } else {
+                          boolean cur = BubbleActs.current(acts, a.pkg) == a;
+                          String sub = (a.label == null || a.label.isEmpty() ? a.type : a.label)
+                                  + (cur ? "   ★ " + t("آخرین عملکرد", "last action") : "");
+                          r.addView(row(0xFF26A69A, "✓", (i + 1) + ". " + BubbleActs.appLabel(this, a.pkg),
+                                  sub, 0, fg, v -> actSlotClick(slot)));
+                      }
+                  }
+                  return wrapScroll(r);
+              }
+
+              void actSlotClick(final int slot) {
+                  final BubbleActs.Act[] acts = BubbleActs.load(sp);
+                  final BubbleActs.Act a = acts[slot];
+                  if (a == null) {
+                      actPickApp(slot);
+                      return;
+                  }
+                  CharSequence[] items = {
+                          t("انتخاب به‌عنوان آخرین عملکرد این برنامه", "Use as this app's last action"),
+                          t("تغییر عملکرد", "Change action"),
+                          t("حذف", "Delete")};
+                  new AlertDialog.Builder(this).setTitle((slot + 1) + ". " + BubbleActs.appLabel(this, a.pkg))
+                          .setItems(items, (d, w) -> {
+                              if (w == 0) {
+                                  a.ts = System.currentTimeMillis();
+                                  BubbleActs.save(sp, acts);
+                                  show();
+                              } else if (w == 1) {
+                                  actPickApp(slot);
+                              } else {
+                                  acts[slot] = null;
+                                  BubbleActs.save(sp, acts);
+                                  if (!BubbleActs.pkgs(acts).contains(a.pkg)) sp.edit().remove("bub_on_" + a.pkg).apply();
+                                  show();
+                              }
+                          }).setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              // step 1: which app
+              void actPickApp(final int slot) {
+                  PackageManager pm = getPackageManager();
+                  Intent q = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
+                  Set<String> seen = new HashSet<>();
+                  final List<String[]> l = new ArrayList<>();
+                  for (ResolveInfo ri : pm.queryIntentActivities(q, 0)) {
+                      String p = ri.activityInfo.packageName;
+                      if (p.equals(getPackageName()) || !seen.add(p)) continue;
+                      l.add(new String[]{ri.loadLabel(pm).toString(), p});
+                  }
+                  Collections.sort(l, (x, y) -> x[0].compareToIgnoreCase(y[0]));
+                  CharSequence[] names = new CharSequence[l.size()];
+                  for (int i = 0; i < names.length; i++) names[i] = l.get(i)[0];
+                  new AlertDialog.Builder(this).setTitle(t("انتخاب برنامه", "Choose app"))
+                          .setItems(names, (d, w) -> actPickKind(slot, l.get(w)[1], l.get(w)[0]))
+                          .setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              // step 2: one of the app's shortcuts, or open the app and save its last run
+              void actPickKind(final int slot, final String pkg, String appName) {
+                  final List<ShortcutInfo> scs = BubbleActs.shortcuts(this, pkg);
+                  if (scs.isEmpty()) {
+                      actRecordByOpening(slot, pkg);
+                      return;
+                  }
+                  CharSequence[] items = new CharSequence[scs.size() + 1];
+                  for (int i = 0; i < scs.size(); i++) {
+                      CharSequence sl = scs.get(i).getShortLabel();
+                      items[i] = "⚡ " + (sl == null ? scs.get(i).getId() : sl);
+                  }
+                  items[scs.size()] = t("▶ باز کردن برنامه و ثبت آخرین اجرا", "▶ Open the app and save its last run");
+                  new AlertDialog.Builder(this).setTitle(appName).setItems(items, (d, w) -> {
+                      if (w == scs.size()) {
+                          actRecordByOpening(slot, pkg);
+                      } else {
+                          ShortcutInfo s = scs.get(w);
+                          CharSequence sl = s.getShortLabel();
+                          actSave(slot, pkg, "sc", s.getId(), sl == null ? s.getId() : sl.toString());
+                      }
+                  }).setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              void actSave(int slot, String pkg, String type, String id, String label) {
+                  BubbleActs.Act[] acts = BubbleActs.load(sp);
+                  BubbleActs.Act a = new BubbleActs.Act();
+                  a.pkg = pkg;
+                  a.type = type;
+                  a.id = id;
+                  a.label = label;
+                  a.ts = System.currentTimeMillis();
+                  acts[slot] = a;
+                  BubbleActs.save(sp, acts);
+                  page = ACTS;
+                  show();
+              }
+
+              // the app is opened now; when the person comes back to the launcher its last screen is saved
+              void actRecordByOpening(final int slot, final String pkg) {
+                  final Intent li = getPackageManager().getLaunchIntentForPackage(pkg);
+                  if (li == null) {
+                      Toast.makeText(this, t("این برنامه قابل اجرا نیست", "This app cannot be opened"), Toast.LENGTH_SHORT).show();
+                      return;
+                  }
+                  if (!BubbleActs.hasUsage(this)) {
+                      new AlertDialog.Builder(this).setTitle(t("دسترسی لازم است", "Permission needed"))
+                              .setMessage(t("برای ثبت آخرین اجرای برنامه، دسترسی «Usage access» را برای VadLan فعال کنید و دوباره تلاش کنید. یا فقط باز کردن ساده برنامه را ثبت کنید.",
+                                      "To save the app's last run, allow \"Usage access\" for VadLan and try again. Or save just a plain open of the app."))
+                              .setPositiveButton(t("اعطای دسترسی", "Grant"), (d, w) -> {
+                                  try { startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)); } catch (Exception e) { }
+                              })
+                              .setNeutralButton(t("فقط باز کردن برنامه", "Just open the app"),
+                                      (d, w) -> actSave(slot, pkg, "app", "", t("باز کردن برنامه", "Open app")))
+                              .setNegativeButton(t("لغو", "Cancel"), null).show();
+                      return;
+                  }
+                  sp.edit().putInt("bub_pend_slot", slot).putString("bub_pend_pkg", pkg)
+                          .putLong("bub_pend_t", System.currentTimeMillis()).apply();
+                  Toast.makeText(this, t("برنامه را اجرا کنید و کارتان را انجام دهید، سپس به لانچر برگردید",
+                          "Use the app, then come back to the launcher"), Toast.LENGTH_LONG).show();
+                  startActivity(li);
+              }
+
+              // back in the launcher after "open the app and save its last run"
+              void finishPendingAct() {
+                  String pkg = sp.getString("bub_pend_pkg", null);
+                  if (pkg == null) return;
+                  int slot = sp.getInt("bub_pend_slot", -1);
+                  long since = sp.getLong("bub_pend_t", 0);
+                  sp.edit().remove("bub_pend_pkg").remove("bub_pend_slot").remove("bub_pend_t").apply();
+                  if (slot < 0 || slot >= BubbleActs.MAX) return;
+                  String cls = BubbleActs.lastScreen(this, pkg, since);
+                  if (cls != null) {
+                      actSave(slot, pkg, "cmp", cls, cls.substring(cls.lastIndexOf('.') + 1));
+                      Toast.makeText(this, t("آخرین اجرای برنامه ثبت شد", "The app's last run was saved"), Toast.LENGTH_SHORT).show();
+                  } else {
+                      actSave(slot, pkg, "app", "", t("باز کردن برنامه", "Open app"));
+                      Toast.makeText(this, t("آخرین اجرا پیدا نشد؛ باز کردن ساده ثبت شد", "Last run not found; a plain open was saved"), Toast.LENGTH_SHORT).show();
+                  }
               }
 
               void setTile(boolean on) {
