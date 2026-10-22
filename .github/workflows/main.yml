@@ -751,7 +751,18 @@ jobs:
                           Intent i = c.getPackageManager().getLaunchIntentForPackage(x.pkg);
                           if (i == null) return false;
                           i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                          c.startActivity(i);
+                          if ("popup".equals(x.id)) {
+                              // popup: a window of the size saved from "Run apps" (needs free-form windows on the phone)
+                              android.app.ActivityOptions o = android.app.ActivityOptions.makeBasic();
+                              try {
+                                  String[] q = c.getSharedPreferences("l", 0).getString("runRect", "").split(",");
+                                  if (q.length == 4) o.setLaunchBounds(new android.graphics.Rect(
+                                          Integer.parseInt(q[0]), Integer.parseInt(q[1]), Integer.parseInt(q[2]), Integer.parseInt(q[3])));
+                              } catch (Throwable e) { }
+                              c.startActivity(i, o.toBundle());
+                          } else {
+                              c.startActivity(i);
+                          }
                           return true;
                       }
                   } catch (Throwable e) { }
@@ -1028,24 +1039,16 @@ jobs:
                       }
                   };
                   listRoot.setLayoutDirection(fa() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
-                  GradientDrawable g = new GradientDrawable();
-                  g.setCornerRadius(dpToPx(16));
-                  int la = Math.max(10, Math.min(100, sp.getInt("bub_lalpha", 95)));
-                  boolean glass = sp.getBoolean("bub_lglass", false);
-                  if (glass) {
-                      // glass: light see-through tint, bright edge (and a blur of what is behind on newer Android)
-                      g.setColor(((la * 255 / 100 * 40 / 100) << 24) | 0x202024);
-                      g.setStroke(dpToPx(1), 0x66FFFFFF);
-                  } else {
-                      g.setColor(((la * 255 / 100) << 24) | 0x202024);
-                      g.setStroke(dpToPx(1), 0x33FFFFFF);
-                  }
-                  listRoot.setBackground(g);
+                  final boolean sep = sp.getBoolean("bub_sep", false);
+                  final boolean glass = sp.getBoolean("bub_lglass", false);
+                  if (sep) listRoot.setBackgroundColor(0);   // separate boxes: every row has its own background
+                  else listRoot.setBackground(boxDrawable(sp.getInt("bub_lcol", 0xF2202024), glass, dpToPx(16)));
                   ScrollView sv = new ScrollView(this);
                   sv.setVerticalScrollBarEnabled(false);
                   listCard = new LinearLayout(this);
                   listCard.setOrientation(LinearLayout.VERTICAL);
-                  listCard.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
+                  int cpad = sep ? 0 : dpToPx(6);
+                  listCard.setPadding(cpad, cpad, cpad, cpad);
                   sv.addView(listCard);
                   listRoot.addView(sv, new FrameLayout.LayoutParams(-1, -1));
 
@@ -1056,7 +1059,7 @@ jobs:
                                   | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
                           PixelFormat.TRANSLUCENT);
                   listParams.gravity = Gravity.TOP | Gravity.LEFT;
-                  if (glass && Build.VERSION.SDK_INT >= 31) {
+                  if (glass && !sep && Build.VERSION.SDK_INT >= 31) {
                       try {
                           listParams.flags |= WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
                           listParams.setBlurBehindRadius(dpToPx(24));
@@ -1081,10 +1084,12 @@ jobs:
                   if (listRoot == null || params == null) return;
                   int sw = getResources().getDisplayMetrics().widthPixels;
                   int sh = getResources().getDisplayMetrics().heightPixels;
-                  int w = Math.min(dpToPx(Math.max(100, Math.min(320, sp.getInt("bub_lw", 190)))), sw - dpToPx(16));
+                  int w = Math.min(dpToPx(Math.max(15, Math.min(200, sp.getInt("bub_lw", 190)))), sw - dpToPx(16));
                   listCard.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY),
                           View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-                  int maxH = sh * Math.max(20, Math.min(100, sp.getInt("bub_lh", 100))) / 100;
+                  final boolean sepL = sp.getBoolean("bub_sep", false);
+                  // separate boxes: the height lever sizes every box; otherwise it limits the height of the whole list
+                  int maxH = sepL ? sh : sh * Math.max(20, Math.min(100, sp.getInt("bub_lh", 100))) / 100;
                   int h = Math.min(listCard.getMeasuredHeight(), maxH);
                   int gap = dpToPx(6), edge = dpToPx(24);
                   int y = params.y + params.height + gap;
@@ -1099,13 +1104,28 @@ jobs:
                   }
                   boolean right = sp.getInt("mock_px", 70) > 50;
                   listParams.width = w;
-                  listParams.height = Math.max(dpToPx(60), h);
+                  listParams.height = sepL ? Math.max(1, h) : Math.max(dpToPx(60), h);
                   listParams.x = right ? sw - w - dpToPx(8) : dpToPx(8);
                   listParams.y = Math.max(edge, y);
                   try {
                       if (add) wm.addView(listRoot, listParams);
                       else wm.updateViewLayout(listRoot, listParams);
                   } catch (Exception e) {}
+              }
+
+              private GradientDrawable boxDrawable(int col, boolean glass, int rPx) {
+                  GradientDrawable g = new GradientDrawable();
+                  g.setCornerRadius(rPx);
+                  g.setColor(col);
+                  g.setStroke(dpToPx(1), glass ? 0x66FFFFFF : 0x33FFFFFF);
+                  return g;
+              }
+
+              // gap between separate boxes: micrometers (negative = overlap)
+              private int gapPx() {
+                  float um = sp.getInt("bub_gap", 800);
+                  return (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_MM, um / 1000f,
+                          getResources().getDisplayMetrics());
               }
 
               private TextView listText(String s, float sp14, int color) {
@@ -1119,11 +1139,19 @@ jobs:
               }
 
               private void addListItem(String dot, int dotColor, String text, Runnable click, Runnable longClick) {
+                  final boolean sep = sp.getBoolean("bub_sep", false);
+                  int ts = Math.max(10, Math.min(28, sp.getInt("bub_lts", 15)));
                   LinearLayout row = new LinearLayout(this);
                   row.setGravity(Gravity.CENTER_VERTICAL);
-                  int ts = Math.max(10, Math.min(28, sp.getInt("bub_lts", 15)));
                   int vp = Math.max(dpToPx(6), dpToPx(11) * ts / 15);
-                  row.setPadding(dpToPx(12), vp, dpToPx(12), vp);
+                  row.setPadding(dpToPx(12), sep ? 0 : vp, dpToPx(12), sep ? 0 : vp);
+                  int boxH = 0;
+                  if (sep) {
+                      // one box per app: the height lever sizes all boxes together
+                      int lh = Math.max(20, Math.min(100, sp.getInt("bub_lh", 100)));
+                      boxH = Math.max(dpToPx(8) + dpToPx(52) * lh / 100, (int) (dpToPx(ts) * 1.5f));
+                      row.setBackground(boxDrawable(sp.getInt("bub_lcol", 0xF2202024), sp.getBoolean("bub_lglass", false), dpToPx(14)));
+                  }
                   if (dot != null) {
                       TextView d = listText(dot, 12, dotColor);
                       LinearLayout.LayoutParams dl = new LinearLayout.LayoutParams(-2, -2);
@@ -1132,14 +1160,21 @@ jobs:
                   }
                   row.addView(listText(text, ts, 0xFFFFFFFF), new LinearLayout.LayoutParams(0, -2, 1));
                   row.setOnTouchListener((v, ev) -> {
-                      if (ev.getAction() == MotionEvent.ACTION_DOWN) v.setBackgroundColor(0x33FFFFFF);
-                      else if (ev.getAction() == MotionEvent.ACTION_UP || ev.getAction() == MotionEvent.ACTION_CANCEL)
-                          v.setBackgroundColor(0);
+                      int a = ev.getAction();
+                      if (sep) {
+                          if (a == MotionEvent.ACTION_DOWN) v.setAlpha(0.65f);
+                          else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) v.setAlpha(1f);
+                      } else {
+                          if (a == MotionEvent.ACTION_DOWN) v.setBackgroundColor(0x33FFFFFF);
+                          else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) v.setBackgroundColor(0);
+                      }
                       return false;
                   });
                   row.setOnClickListener(v -> click.run());
                   if (longClick != null) row.setOnLongClickListener(v -> { longClick.run(); return true; });
-                  listCard.addView(row, new LinearLayout.LayoutParams(-1, -2));
+                  LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, sep ? boxH : -2);
+                  if (sep && listCard.getChildCount() > 0) lp.topMargin = gapPx();
+                  listCard.addView(row, lp);
               }
 
               // sub == null: the apps that have actions; otherwise: the actions of that one app
@@ -1354,7 +1389,7 @@ jobs:
           public class MainActivity extends Activity {
               static final int HOME = 0, SETTINGS = 1, BG = 2, BEHAVIOR = 3, LANG = 4, PICKER = 5,
                       DOCK = 6, ICON = 8, MOCK = 9, FOLDER = 10, BACKUP = 11, RESTORE = 12,
-                      FONT = 13, FGRP = 14, FPICK = 15, DOCKBG = 16, HPAGE = 17, HFBG = 18, MBG = 19, TBG = 20, TBAR = 21, MBOX = 22, SBOX = 23, ACTS = 24;
+                      FONT = 13, FGRP = 14, FPICK = 15, DOCKBG = 16, HPAGE = 17, HFBG = 18, MBG = 19, TBG = 20, TBAR = 21, MBOX = 22, SBOX = 23, ACTS = 24, BUB = 25, BLBG = 26;
               static final int DLG = 0xFFEEEEEE;
               static final int REQ_IMG = 77, REQ_FIMG = 78, REQ_MIMG = 79, REQ_TIMG = 80;
 
@@ -1809,6 +1844,7 @@ jobs:
               @Override
               protected void onStop() {
                   super.onStop();
+                  saveRunRect();
                   sp.edit().putBoolean("open", false).apply();
                   MockBubbleService.launcherVisible = false;
                   MockBubbleService.refresh();
@@ -1856,7 +1892,10 @@ jobs:
                   } else if (page == ICON) {
                       page = HPAGE;
                       show();
-                  } else if (page == ACTS) {
+                  } else if (page == ACTS || page == BLBG) {
+                      page = BUB;
+                      show();
+                  } else if (page == BUB) {
                       page = MOCK;
                       show();
                   } else if (page == MOCK) {
@@ -2255,12 +2294,12 @@ jobs:
                   if (!glass()) {
                       GradientDrawable g = new GradientDrawable();
                       g.setCornerRadius(dp(rDp));
-                      g.setColor(has ? sp.getInt(ck, 0) : scaleA(plain, boxFade));
+                      g.setColor(has ? (boxFade < 0.5f ? scaleA(sp.getInt(ck, 0), boxFade / 0.6f) : sp.getInt(ck, 0)) : scaleA(plain, boxFade));
                       return g;
                   }
                   Glass gl = new Glass(has ? sp.getInt(ck, 0) : (light() ? 0x44FFFFFF : 0x26FFFFFF), dp(rDp), null);
                   gl.blurOn = menuPage() && mbgBmp != null;
-                  gl.fade = has ? 1f : boxFade;
+                  gl.fade = has ? (boxFade < 0.5f ? boxFade / 0.6f : 1f) : boxFade;
                   return gl;
               }
 
@@ -3205,6 +3244,8 @@ jobs:
                   else if (page == PICKER) v = pickerPage(fg);
                   else if (page == MOCK) v = mockPage(fg);
                   else if (page == ACTS) v = actsPage(fg);
+                  else if (page == BUB) v = bubblePage(fg);
+                  else if (page == BLBG) v = bgPageG(6, fg);
                   else if (page == BACKUP) v = backupPage(fg);
                   else if (page == RESTORE) v = restorePage(fg);
                   else v = homePage(fg);
@@ -3233,6 +3274,7 @@ jobs:
                   int from = shownPage;
                   shownPage = page;
                   swap(v, transDir(from, page));
+                  if (page == HOME) container.postDelayed(() -> saveRunRect(), 600);
               }
 
               // ================= home =================
@@ -6486,6 +6528,17 @@ jobs:
                   }
               }
 
+              // the size of "Run apps" is kept, so the bubble can open an app as a popup of that same size
+              void saveRunRect() {
+                  try {
+                      if (page != HOME) return;
+                      Rect r = runRect();
+                      if (r == null || r.width() < dp(50) || r.height() < dp(50)) return;
+                      String v = r.left + "," + r.top + "," + r.right + "," + r.bottom;
+                      if (!v.equals(sp.getString("runRect", ""))) sp.edit().putString("runRect", v).apply();
+                  } catch (Throwable e) { }
+              }
+
               void launchApp(String pkg) {
                   Intent li = getPackageManager().getLaunchIntentForPackage(pkg);
                   if (li == null) return;
@@ -6759,40 +6812,13 @@ jobs:
                       }
                   };
 
-                  // what the bubble does when it is tapped: open the launcher and / or the list of app actions
-                  final boolean bubLau = sp.getBoolean("bub_launcher", true);
-                  final boolean bubAct = sp.getBoolean("bub_act_on", false);
-                  r.addView(accordionGroup(0xFF00897B, "💬", t("حباب", "Bubble"), fg,
-                          row(0xFF3D7BF7, "🏠", t("لانچر", "Launcher"),
-                                  t("با زدن روی حباب، برنامه لانچر باز شود", "Tapping the bubble opens the launcher app"),
-                                  bubLau ? 3 : 2, fg, v -> {
-                              sp.edit().putBoolean("bub_launcher", !bubLau).apply();
-                              show();
-                          }),
-                          row(0xFFEF6C00, "⚡", t("عملکرد", "Actions"),
-                                  t("با زدن روی حباب، لیست عملکردها باز شود؛ با زدن روی نام برنامه فقط آخرین عملکرد آن اجرا می‌شود",
-                                          "Tapping the bubble opens the action list; tapping an app name runs only its last action"),
-                                  bubAct ? 3 : 2, fg, v -> {
-                              sp.edit().putBoolean("bub_act_on", !bubAct).apply();
-                              show();
-                          }),
-                          row(0xFF8E24AA, "📝", t("ثبت عملکردها", "Record actions"),
-                                  BubbleActs.count(BubbleActs.load(sp)) + " / " + BubbleActs.MAX,
-                                  0, fg, v -> {
-                              page = ACTS;
-                              show();
-                          }),
-                          accordionGroup(0xFF5E35B1, "🎨", t("پس‌زمینه لیست عملکرد", "Action list background"), fg,
-                                  accordionRow(0xFF42A5F5, "↔", t("عرض لیست", "List width"), "bub_lw", 100, 320, 190, " dp", fg, null),
-                                  accordionRow(0xFF26C6DA, "↕", t("ارتفاع لیست (حداکثر)", "List height (max)"), "bub_lh", 20, 100, 100, "%", fg, null),
-                                  accordionRow(0xFF66BB6A, "💧", t("شفافیت لیست", "List opacity"), "bub_lalpha", 10, 100, 95, "%", fg, null),
-                                  row(0xFF7E57C2, "🪟", t("شیشه‌ای", "Glass"),
-                                          t("پس‌زمینه نیمه‌شفاف با محو شدن پشت لیست", "Translucent background with blur behind the list"),
-                                          sp.getBoolean("bub_lglass", false) ? 3 : 2, fg, v -> {
-                                      sp.edit().putBoolean("bub_lglass", !sp.getBoolean("bub_lglass", false)).apply();
-                                      show();
-                                  }),
-                                  accordionRow(0xFFFFB300, "🔤", t("اندازه نام برنامه‌ها", "App name size"), "bub_lts", 10, 28, 15, " sp", fg, null))));
+                  // everything about what the bubble does and its list lives on its own page
+                  r.addView(row(0xFF00897B, "💬", t("حباب", "Bubble"),
+                          t("لانچر، عملکردها و ظاهر لیست حباب", "Launcher, actions and the look of the bubble list"),
+                          0, fg, v -> {
+                      page = BUB;
+                      show();
+                  }));
                   r.addView(accordionRow(0xFF2196F3, "📐", t("سایز حباب", "Bubble Size"), "mock_size", 30, 100, 56, " dp", fg, updateMock));
                   r.addView(accordionRow(0xFF4CAF50, "💧", t("شفافیت حباب", "Bubble Opacity"), "mock_alpha", 20, 100, 90, "%", fg, updateMock));
                   r.addView(accordionRow(0xFFFFB300, "⏱", t("سرعت", "Speed"), "mock_speed", 50, 2000, 2000, " ms", fg, updateMock));
@@ -6812,6 +6838,61 @@ jobs:
                   return wrapScroll(r);
               }
 
+              // ---------- bubble page ----------
+              View bubblePage(final int fg) {
+                  LinearLayout r = vbox();
+                  r.addView(topBar(t("حباب", "Bubble"), fg));
+                  final boolean bubLau = sp.getBoolean("bub_launcher", true);
+                  final boolean bubAct = sp.getBoolean("bub_act_on", false);
+                  r.addView(row(0xFF3D7BF7, "🏠", t("لانچر", "Launcher"),
+                          t("با زدن روی حباب، برنامه لانچر باز شود", "Tapping the bubble opens the launcher app"),
+                          bubLau ? 3 : 2, fg, v -> {
+                      sp.edit().putBoolean("bub_launcher", !bubLau).apply();
+                      show();
+                  }));
+                  r.addView(row(0xFFEF6C00, "⚡", t("عملکرد", "Actions"),
+                          t("با زدن روی حباب، لیست عملکردها باز شود؛ با زدن روی نام برنامه فقط آخرین عملکرد آن اجرا می‌شود",
+                                  "Tapping the bubble opens the action list; tapping an app name runs only its last action"),
+                          bubAct ? 3 : 2, fg, v -> {
+                      sp.edit().putBoolean("bub_act_on", !bubAct).apply();
+                      show();
+                  }));
+                  r.addView(row(0xFF8E24AA, "📝", t("ثبت عملکردها", "Record actions"),
+                          BubbleActs.count(BubbleActs.load(sp)) + " / " + BubbleActs.MAX,
+                          0, fg, v -> {
+                      page = ACTS;
+                      show();
+                  }));
+                  // every app of the list in its own box, stacked, with a gap between them
+                  final boolean sep = sp.getBoolean("bub_sep", false);
+                  r.addView(toggleRowThen(0xFF26A69A, "▦", t("کادر جدا", "Separate boxes"),
+                          t("هر برنامه در کادر جداگانه زیر هم؛ عرض و ارتفاع لیست اندازه همه کادرها را هم‌زمان تغییر می‌دهد",
+                                  "Every app in its own box, stacked; list width and height resize all the boxes together"),
+                          "bub_sep", false, fg, () -> show()));
+                  // look of the list (even fainter boxes inside)
+                  r.addView(accordionGroupFaded(0xFF5E35B1, "🎨", t("پس‌زمینه لیست عملکرد", "Action list background"), fg, 0.4f, () -> {
+                      List<View> l = new ArrayList<>();
+                      l.add(row(0xFFE91E63, "🎨", t("رنگ", "Color"),
+                              t("رنگ و شفافیت پس‌زمینه لیست", "Color and opacity of the list background"),
+                              0, fg, v -> {
+                          page = BLBG;
+                          show();
+                      }));
+                      l.add(accordionRow(0xFF42A5F5, "↔", t("عرض لیست", "List width"), "bub_lw", 15, 200, 190, " dp", fg, null));
+                      l.add(accordionRow(0xFF26C6DA, "↕", t("ارتفاع لیست", "List height"), "bub_lh", 20, 100, 100, "%", fg, null));
+                      if (sep) l.add(accordionRow(0xFF8D6E63, "⇕", t("فاصله کادر لیست", "List box spacing"), "bub_gap", -2000, 6000, 800, " µm", fg, null));
+                      l.add(row(0xFF7E57C2, "🪟", t("شیشه‌ای", "Glass"),
+                              t("لبه روشن و محو شدن پشت لیست", "Bright edge and blur behind the list"),
+                              sp.getBoolean("bub_lglass", false) ? 3 : 2, fg, v -> {
+                          sp.edit().putBoolean("bub_lglass", !sp.getBoolean("bub_lglass", false)).apply();
+                          show();
+                      }));
+                      l.add(accordionRow(0xFFFFB300, "🔤", t("اندازه نام برنامه‌ها", "App name size"), "bub_lts", 10, 28, 15, " sp", fg, null));
+                      return l.toArray(new View[0]);
+                  }));
+                  return wrapScroll(r);
+              }
+
               // ---------- bubble actions: up to 20 saved actions ----------
               View actsPage(final int fg) {
                   LinearLayout r = vbox();
@@ -6824,6 +6905,8 @@ jobs:
                   hint.setAlpha(0.65f);
                   hint.setPadding(dp(4), dp(10), dp(4), 0);
                   r.addView(hint);
+                  final float oldFade = boxFade;
+                  boxFade = 0.6f; // the slots are secondary (fainter) boxes
                   final BubbleActs.Act[] acts = BubbleActs.load(sp);
                   for (int i = 0; i < BubbleActs.MAX; i++) {
                       final int slot = i;
@@ -6839,6 +6922,7 @@ jobs:
                                   sub, 0, fg, v -> actSlotClick(slot)));
                       }
                   }
+                  boxFade = oldFade;
                   return wrapScroll(r);
               }
 
@@ -6890,13 +6974,24 @@ jobs:
               }
 
               // step 2: make an action of the app, or just open the app itself
+              // opening the app itself: as a popup (the size of "Run apps"), or full
+              void actPickOpen(final int slot, final String pkg, final String appName) {
+                  CharSequence[] items = {
+                          t("🗗 باز شدن در پاپ آپ", "🗗 Open in a popup"),
+                          t("⛶ باز شدن کامل", "⛶ Open full")};
+                  new AlertDialog.Builder(this).setTitle(appName).setItems(items, (d, w) -> {
+                      if (w == 0) actSave(slot, pkg, "app", "popup", t("باز شدن در پاپ آپ", "Open in popup"));
+                      else actSave(slot, pkg, "app", "full", t("باز شدن کامل", "Open full"));
+                  }).setNegativeButton(t("بازگشت", "Back"), (d, w) -> actPickMode(slot, pkg, appName)).show();
+              }
+
               void actPickMode(final int slot, final String pkg, final String appName) {
                   CharSequence[] items = {
                           t("⚙ ایجاد عملکرد برنامه (بدون باز شدن برنامه)", "⚙ Create an app action (the app does not open)"),
                           t("📂 باز کردن خود برنامه (بدون اجرای عملکرد)", "📂 Open the app itself (no action)")};
                   new AlertDialog.Builder(this).setTitle(appName).setItems(items, (d, w) -> {
                       if (w == 0) actPickKind(slot, pkg, appName);
-                      else actSave(slot, pkg, "app", "", t("باز کردن برنامه", "Open app"));
+                      else actPickOpen(slot, pkg, appName);
                   }).setNegativeButton(t("لغو", "Cancel"), null).show();
               }
 
@@ -7073,6 +7168,7 @@ jobs:
                   if (mode == 4) return sp.contains("boxMain") ? sp.getInt("boxMain", 0) : (glass() ? (light() ? 0x44FFFFFF : 0x26FFFFFF) : (light() ? 0x14000000 : 0x1AFFFFFF));
                   if (mode == 5) return sp.contains("boxSub") ? sp.getInt("boxSub", 0)
                           : scaleA(glass() ? (light() ? 0x44FFFFFF : 0x26FFFFFF) : (light() ? 0x14000000 : 0x1AFFFFFF), 0.6f);
+                  if (mode == 6) return sp.getInt("bub_lcol", 0xF2202024);
                   return mode == 0 ? bg : (mode == 1 ? mbg()
                           : (mode == 2 ? sp.getInt("hfBg", 0x6628282C) : sp.getInt("topBoxBg", 0x6628282C)));
               }
@@ -7095,7 +7191,7 @@ jobs:
                       return;
                   }
                   if (mode >= 4) {
-                      sp.edit().putInt(mode == 4 ? "boxMain" : "boxSub", c).apply();
+                      sp.edit().putInt(mode == 4 ? "boxMain" : mode == 5 ? "boxSub" : "bub_lcol", c).apply();
                       show();
                       return;
                   }
@@ -7149,7 +7245,7 @@ jobs:
                           : (mode == 1 ? t("رنگ منو", "Menu color")
                           : (mode == 2 ? t("پس‌زمینه کادر", "Frame background")
                           : (mode == 3 ? t("رنگ کادر تنظیمات", "Settings frame color")
-                          : (mode == 4 ? t("رنگ کادر اصلی", "Main box color") : t("رنگ کادر فرعی", "Secondary box color")))));
+                          : (mode == 4 ? t("رنگ کادر اصلی", "Main box color") : mode == 5 ? t("رنگ کادر فرعی", "Secondary box color") : t("رنگ لیست عملکرد", "Action list color")))));
                   LinearLayout p = vbox();
                   p.addView(topBar(title, fg));
 
