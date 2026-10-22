@@ -536,28 +536,81 @@ jobs:
                   }
               }
 
+              // runs the action. It never falls back to opening the app: when the action cannot run, false is returned
               static boolean run(Context c, Act x) {
                   try {
-                      if ("sc".equals(x.type)) {
+                      if ("sc".equals(x.type)) {                 // app shortcut
                           LauncherApps la = (LauncherApps) c.getSystemService(Context.LAUNCHER_APPS_SERVICE);
                           la.startShortcut(x.pkg, x.id, null, null, Process.myUserHandle());
                           return true;
                       }
-                      if ("cmp".equals(x.type)) {
-                          Intent i = new Intent().setClassName(x.pkg, x.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                          c.startActivity(i);
+                      if ("cmp".equals(x.type)) {                // an app screen (activity)
+                          c.startActivity(new Intent().setClassName(x.pkg, x.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                           return true;
                       }
-                  } catch (Throwable e) { }
-                  try {
-                      Intent i = c.getPackageManager().getLaunchIntentForPackage(x.pkg);
-                      if (i != null) {
+                      if ("rcv".equals(x.type)) {                // a broadcast receiver of the app: runs in the background
+                          c.sendBroadcast(new Intent().setClassName(x.pkg, x.id));
+                          return true;
+                      }
+                      if ("svc".equals(x.type)) {                // a service of the app: runs in the background
+                          Intent si = new Intent().setClassName(x.pkg, x.id);
+                          try {
+                              c.startService(si);
+                          } catch (IllegalStateException e) {
+                              c.startForegroundService(si);
+                          }
+                          return true;
+                      }
+                      if ("app".equals(x.type)) {                // plain open of the app (only when chosen on purpose)
+                          Intent i = c.getPackageManager().getLaunchIntentForPackage(x.pkg);
+                          if (i == null) return false;
                           i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                           c.startActivity(i);
                           return true;
                       }
                   } catch (Throwable e) { }
                   return false;
+              }
+
+              // true when running this action would only open the app (plain open or its main screen)
+              static boolean opensAppOnly(Context c, Act x) {
+                  return "app".equals(x.type) || ("cmp".equals(x.type) && x.id.equals(mainScreen(c, x.pkg)));
+              }
+
+              // the main screen of the app (the one the app icon opens)
+              static String mainScreen(Context c, String pkg) {
+                  try {
+                      Intent i = c.getPackageManager().getLaunchIntentForPackage(pkg);
+                      return i == null || i.getComponent() == null ? null : i.getComponent().getClassName();
+                  } catch (Throwable e) {
+                      return null;
+                  }
+              }
+
+              // the parts of an app that other apps may start: {type, class name, shown name}
+              static List<String[]> components(Context c, String pkg) {
+                  List<String[]> out = new ArrayList<>();
+                  try {
+                      android.content.pm.PackageInfo pi = c.getPackageManager().getPackageInfo(pkg,
+                              PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES);
+                      String main = mainScreen(c, pkg);
+                      if (pi.activities != null) for (android.content.pm.ActivityInfo a : pi.activities)
+                          if (a.exported && a.enabled && !a.name.equals(main))
+                              out.add(new String[]{"cmp", a.name, "🖥 " + a.name.substring(a.name.lastIndexOf('.') + 1)});
+                      if (pi.receivers != null) for (android.content.pm.ActivityInfo a : pi.receivers)
+                          if (a.exported && a.enabled && a.permission == null)
+                              out.add(new String[]{"rcv", a.name, "📡 " + a.name.substring(a.name.lastIndexOf('.') + 1)});
+                      if (pi.services != null) for (android.content.pm.ServiceInfo s : pi.services)
+                          if (s.exported && s.enabled && s.permission == null)
+                              out.add(new String[]{"svc", s.name, "⚙ " + s.name.substring(s.name.lastIndexOf('.') + 1)});
+                  } catch (Throwable e) { }
+                  // the app's own parts first, then the ones that come from libraries
+                  final String pre = pkg;
+                  java.util.Collections.sort(out, (x, y) -> {
+                      boolean ox = x[1].startsWith(pre), oy = y[1].startsWith(pre);
+                      return ox != oy ? (ox ? -1 : 1) : x[2].compareToIgnoreCase(y[2]);
+                  });
+                  return out;
               }
 
               // the shortcuts an app offers (needs this launcher to be the default home app)
@@ -902,7 +955,10 @@ jobs:
                           boolean on = sp.getBoolean("bub_on_" + pkg, false);
                           addListItem("●", on ? 0xFF4CAF50 : 0x55FFFFFF, BubbleActs.appLabel(this, pkg), () -> {
                               BubbleActs.Act cur = BubbleActs.current(BubbleActs.load(sp), pkg);
-                              if (cur != null && BubbleActs.run(this, cur)) {
+                              if (cur != null && BubbleActs.opensAppOnly(this, cur)) {
+                                  Toast.makeText(this, tr("این عملکرد فقط برنامه را باز می‌کند؛ در تنظیمات یک میان‌بر یا بخشی از برنامه ثبت کنید",
+                                          "This action only opens the app; save a shortcut or an app part in the settings"), Toast.LENGTH_LONG).show();
+                              } else if (cur != null && BubbleActs.run(this, cur)) {
                                   // the same action again toggles it (connect / disconnect)
                                   sp.edit().putBoolean("bub_on_" + pkg, !sp.getBoolean("bub_on_" + pkg, false)).apply();
                               } else {
@@ -929,7 +985,12 @@ jobs:
                               if (cur[slot] != null) {
                                   cur[slot].ts = System.currentTimeMillis();
                                   BubbleActs.save(sp, cur);
-                                  if (BubbleActs.run(this, cur[slot])) sp.edit().putBoolean("bub_on_" + sub, true).apply();
+                                  if (BubbleActs.opensAppOnly(this, cur[slot])) {
+                                      Toast.makeText(this, tr("این عملکرد فقط برنامه را باز می‌کند؛ در تنظیمات یک میان‌بر یا بخشی از برنامه ثبت کنید",
+                                              "This action only opens the app; save a shortcut or an app part in the settings"), Toast.LENGTH_LONG).show();
+                                  } else if (BubbleActs.run(this, cur[slot])) {
+                                      sp.edit().putBoolean("bub_on_" + sub, true).apply();
+                                  }
                               }
                               closeList();
                           }, null);
@@ -6598,27 +6659,44 @@ jobs:
               }
 
               // step 2: one of the app's shortcuts, or open the app and save its last run
-              void actPickKind(final int slot, final String pkg, String appName) {
+              void actPickKind(final int slot, final String pkg, final String appName) {
                   final List<ShortcutInfo> scs = BubbleActs.shortcuts(this, pkg);
-                  if (scs.isEmpty()) {
-                      actRecordByOpening(slot, pkg);
-                      return;
-                  }
-                  CharSequence[] items = new CharSequence[scs.size() + 1];
+                  CharSequence[] items = new CharSequence[scs.size() + 2];
                   for (int i = 0; i < scs.size(); i++) {
                       CharSequence sl = scs.get(i).getShortLabel();
                       items[i] = "⚡ " + (sl == null ? scs.get(i).getId() : sl);
                   }
-                  items[scs.size()] = t("▶ باز کردن برنامه و ثبت آخرین اجرا", "▶ Open the app and save its last run");
+                  items[scs.size()] = t("🧩 بخش‌های برنامه (Activity / Receiver / Service)", "🧩 App parts (Activity / Receiver / Service)");
+                  items[scs.size() + 1] = t("▶ باز کردن برنامه و ثبت آخرین اجرا", "▶ Open the app and save its last run");
                   new AlertDialog.Builder(this).setTitle(appName).setItems(items, (d, w) -> {
-                      if (w == scs.size()) {
+                      if (w == scs.size() + 1) {
                           actRecordByOpening(slot, pkg);
+                      } else if (w == scs.size()) {
+                          actPickPart(slot, pkg, appName);
                       } else {
                           ShortcutInfo s = scs.get(w);
                           CharSequence sl = s.getShortLabel();
                           actSave(slot, pkg, "sc", s.getId(), sl == null ? s.getId() : sl.toString());
                       }
                   }).setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              // step 3 (optional): a screen, receiver or service of the app that runs without opening the app itself
+              void actPickPart(final int slot, final String pkg, final String appName) {
+                  final List<String[]> parts = BubbleActs.components(this, pkg);
+                  if (parts.isEmpty()) {
+                      Toast.makeText(this, t("این برنامه بخش قابل اجرایی ندارد", "This app has no startable parts"), Toast.LENGTH_SHORT).show();
+                      actPickKind(slot, pkg, appName);
+                      return;
+                  }
+                  CharSequence[] names = new CharSequence[parts.size()];
+                  for (int i = 0; i < names.length; i++) names[i] = parts.get(i)[2];
+                  new AlertDialog.Builder(this).setTitle(appName)
+                          .setItems(names, (d, w) -> {
+                              String[] p = parts.get(w);
+                              actSave(slot, pkg, p[0], p[1], p[2]);
+                          })
+                          .setNegativeButton(t("بازگشت", "Back"), (d, w) -> actPickKind(slot, pkg, appName)).show();
               }
 
               void actSave(int slot, String pkg, String type, String id, String label) {
@@ -6672,7 +6750,11 @@ jobs:
                   String cls = BubbleActs.lastScreen(this, pkg, since);
                   if (cls != null) {
                       actSave(slot, pkg, "cmp", cls, cls.substring(cls.lastIndexOf('.') + 1));
-                      Toast.makeText(this, t("آخرین اجرای برنامه ثبت شد", "The app's last run was saved"), Toast.LENGTH_SHORT).show();
+                      if (cls.equals(BubbleActs.mainScreen(this, pkg)))
+                          Toast.makeText(this, t("این صفحه اصلی برنامه است و اجرای آن فقط برنامه را باز می‌کند؛ بهتر است میان‌بر یا بخشی از برنامه را انتخاب کنید",
+                                  "This is the app's main screen; running it only opens the app. Better pick a shortcut or an app part"), Toast.LENGTH_LONG).show();
+                      else
+                          Toast.makeText(this, t("آخرین اجرای برنامه ثبت شد", "The app's last run was saved"), Toast.LENGTH_SHORT).show();
                   } else {
                       actSave(slot, pkg, "app", "", t("باز کردن برنامه", "Open app"));
                       Toast.makeText(this, t("آخرین اجرا پیدا نشد؛ باز کردن ساده ثبت شد", "Last run not found; a plain open was saved"), Toast.LENGTH_SHORT).show();
@@ -7577,3 +7659,4 @@ jobs:
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+
