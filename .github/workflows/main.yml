@@ -98,7 +98,7 @@ jobs:
                   targetSdk 34
                   // minutes since 1970: always bigger than the previous build, so Android never sees it as a downgrade
                   versionCode System.currentTimeMillis().intdiv(60000L).intValue()
-                  versionName "47.0"
+                  versionName "51.0"
               }
               buildTypes {
                   debug { signingConfig signingConfigs.vadlan }
@@ -190,6 +190,7 @@ jobs:
           EOF
 
           cat > app/src/main/res/drawable/ic_bg.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:aapt="http://schemas.android.com/aapt"
               android:width="108dp" android:height="108dp"
@@ -197,9 +198,8 @@ jobs:
               <path android:pathData="M0,0h108v108h-108z">
                   <aapt:attr name="android:fillColor">
                       <gradient android:startX="0" android:startY="0" android:endX="108" android:endY="108" android:type="linear">
-                          <item android:offset="0" android:color="#FF1A237E"/>
-                          <item android:offset="0.55" android:color="#FF3949AB"/>
-                          <item android:offset="1" android:color="#FF5C6BC0"/>
+                          <item android:offset="0" android:color="#FFFFFFFF"/>
+                          <item android:offset="1" android:color="#FFD5D9E6"/>
                       </gradient>
                   </aapt:attr>
               </path>
@@ -207,35 +207,47 @@ jobs:
           EOF
 
           cat > app/src/main/res/drawable/ic_fg.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:aapt="http://schemas.android.com/aapt"
               android:width="108dp" android:height="108dp"
               android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="#FFFF5252" android:pathData="M32,28h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF40C4FF" android:pathData="M51,28h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FFFFAB40" android:pathData="M70,28h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF69F0AE" android:pathData="M32,47h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FFFFFFFF" android:pathData="M51,47h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF3D5AFE" android:pathData="M54,50.5a3.5,3.5 0 1 0 0.01,0z"/>
-              <path android:fillColor="#FFB388FF" android:pathData="M70,47h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FFFF80AB" android:pathData="M32,66h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FFFFE57F" android:pathData="M51,66h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF64FFDA" android:pathData="M70,66h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
+              <path android:pathData="M32.2,56.2 a23,23 0 1,0 46,0 a23,23 0 1,0 -46,0" android:strokeColor="#FF000000" android:strokeAlpha="0.2" android:strokeWidth="16"/>
+              <path android:fillColor="#FFFBBC00" android:pathData="M45.98,24.06 A31,31 0 0 1 62.23,24.11 L57.98,39.54 A15,15 0 0 0 50.12,39.51 Z"/>
+              <path android:fillColor="#FFFC9A00" android:pathData="M62.02,24.06 A31,31 0 0 1 76.07,32.23 L64.68,43.47 A15,15 0 0 0 57.88,39.51 Z"/>
+              <path android:fillColor="#FFFF5608" android:pathData="M75.92,32.08 A31,31 0 0 1 84,46.19 L68.52,50.22 A15,15 0 0 0 64.61,43.39 Z"/>
+              <path android:fillColor="#FFFF2813" android:pathData="M83.94,45.98 A31,31 0 0 1 83.89,62.23 L68.46,57.98 A15,15 0 0 0 68.49,50.12 Z"/>
+              <path android:fillColor="#FFA41A4A" android:pathData="M83.94,62.02 A31,31 0 0 1 75.77,76.07 L64.53,64.68 A15,15 0 0 0 68.49,57.88 Z"/>
+              <path android:fillColor="#FF8600B2" android:pathData="M75.92,75.92 A31,31 0 0 1 61.81,84 L57.78,68.52 A15,15 0 0 0 64.61,64.61 Z"/>
+              <path android:fillColor="#FF3D00A5" android:pathData="M62.02,83.94 A31,31 0 0 1 45.77,83.89 L50.02,68.46 A15,15 0 0 0 57.88,68.49 Z"/>
+              <path android:fillColor="#FF0044FF" android:pathData="M45.98,83.94 A31,31 0 0 1 31.93,75.77 L43.32,64.53 A15,15 0 0 0 50.12,68.49 Z"/>
+              <path android:fillColor="#FF0090CC" android:pathData="M32.08,75.92 A31,31 0 0 1 24,61.81 L39.48,57.78 A15,15 0 0 0 43.39,64.61 Z"/>
+              <path android:fillColor="#FF69B030" android:pathData="M24.06,62.02 A31,31 0 0 1 24.11,45.77 L39.54,50.02 A15,15 0 0 0 39.51,57.88 Z"/>
+              <path android:fillColor="#FFD3EA2B" android:pathData="M24.06,45.98 A31,31 0 0 1 32.23,31.93 L43.47,43.32 A15,15 0 0 0 39.51,50.12 Z"/>
+              <path android:fillColor="#FFFFFF33" android:pathData="M32.08,32.08 A31,31 0 0 1 46.19,24 L50.22,39.48 A15,15 0 0 0 43.39,43.39 Z"/>
+              <path android:pathData="M25.3,54 a28.7,28.7 0 1,0 57.4,0 a28.7,28.7 0 1,0 -57.4,0" android:strokeColor="#FF000000" android:strokeAlpha="0.27" android:strokeWidth="4.6"/>
+              <path android:pathData="M37,54 a17,17 0 1,0 34,0 a17,17 0 1,0 -34,0" android:strokeColor="#FF000000" android:strokeAlpha="0.22" android:strokeWidth="4"/>
+              <path android:pathData="M31,54 a23,23 0 1,0 46,0 a23,23 0 1,0 -46,0" android:strokeColor="#FFFFFFFF" android:strokeAlpha="0.25" android:strokeWidth="3.52"/>
+              <path android:pathData="M31,54 a23,23 0 1,0 46,0 a23,23 0 1,0 -46,0" android:strokeWidth="16">
+                  <aapt:attr name="android:strokeColor">
+                      <gradient android:startX="23" android:startY="23" android:endX="85" android:endY="85" android:type="linear">
+                          <item android:offset="0" android:color="#66FFFFFF"/>
+                          <item android:offset="0.4" android:color="#00FFFFFF"/>
+                          <item android:offset="0.6" android:color="#00000000"/>
+                          <item android:offset="1" android:color="#66000000"/>
+                      </gradient>
+                  </aapt:attr>
+              </path>
+              <path android:pathData="M23.4,54 a30.6,30.6 0 1,0 61.2,0 a30.6,30.6 0 1,0 -61.2,0" android:strokeColor="#FFFFFFFF" android:strokeAlpha="0.33" android:strokeWidth="0.8"/>
           </vector>
           EOF
 
           cat > app/src/main/res/drawable/ic_mono.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp" android:height="108dp"
               android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="#FF000000" android:pathData="M32,28h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF000000" android:pathData="M51,28h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF000000" android:pathData="M70,28h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF000000" android:pathData="M32,47h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF000000" android:fillType="evenOdd" android:pathData="M51,47h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z M54,50.5a3.5,3.5 0 1 0 0.01,0z"/>
-              <path android:fillColor="#FF000000" android:pathData="M70,47h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF000000" android:pathData="M32,66h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF000000" android:pathData="M51,66h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
-              <path android:fillColor="#FF000000" android:pathData="M70,66h6a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4h-6a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"/>
+              <path android:fillColor="#FF000000" android:fillType="evenOdd" android:pathData="M23,54 a31,31 0 1,0 62,0 a31,31 0 1,0 -62,0 M39,54 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0"/>
           </vector>
           EOF
 
@@ -288,10 +300,11 @@ jobs:
           cat > app/src/main/res/xml/tile_a11y.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-              android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+              android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewClicked"
               android:accessibilityFeedbackType="feedbackGeneric"
               android:accessibilityFlags="flagRetrieveInteractiveWindows|flagReportViewIds"
               android:canRetrieveWindowContent="true"
+              android:canTakeScreenshot="true"
               android:description="@string/a11y_desc"
               android:notificationTimeout="100" />
           EOF
@@ -300,16 +313,29 @@ jobs:
           package com.mylauncher;
 
           import android.accessibilityservice.AccessibilityService;
+          import android.content.ContentValues;
           import android.content.Intent;
+          import android.graphics.Bitmap;
+          import android.net.Uri;
           import android.os.Build;
           import android.os.Handler;
           import android.os.Looper;
+          import android.provider.MediaStore;
+          import android.content.SharedPreferences;
+          import android.graphics.PixelFormat;
+          import android.graphics.drawable.GradientDrawable;
+          import android.view.Gravity;
+          import android.view.WindowManager;
           import android.view.accessibility.AccessibilityEvent;
           import android.view.accessibility.AccessibilityNodeInfo;
           import android.view.accessibility.AccessibilityWindowInfo;
+          import android.widget.TextView;
           import android.widget.Toast;
+          import java.io.OutputStream;
           import java.util.ArrayList;
           import java.util.List;
+          import org.json.JSONArray;
+          import org.json.JSONObject;
 
           // opens Quick Settings, taps the tile with the given name and closes the panel again
           public class TileClickService extends AccessibilityService {
@@ -320,6 +346,57 @@ jobs:
               private boolean busy = false;
 
               static boolean ready() { return inst != null; }
+
+              // takes a picture of the screen and hands it to the given app (Android 11 and later)
+              static void shotAndShare(final android.content.Context c, final String pkg, final boolean popup,
+                                       final String prompt, final Runnable done) {
+                  if (inst == null || Build.VERSION.SDK_INT < 30) {
+                      if (done != null) done.run();
+                      return;
+                  }
+                  try {
+                      inst.takeScreenshot(android.view.Display.DEFAULT_DISPLAY, c.getMainExecutor(),
+                              new AccessibilityService.TakeScreenshotCallback() {
+                          @Override
+                          public void onSuccess(AccessibilityService.ScreenshotResult r) {
+                              if (done != null) done.run();
+                              try {
+                                  Bitmap hw = Bitmap.wrapHardwareBuffer(r.getHardwareBuffer(), r.getColorSpace());
+                                  Bitmap bmp = hw.copy(Bitmap.Config.ARGB_8888, false);
+                                  r.getHardwareBuffer().close();
+                                  ContentValues cv = new ContentValues();
+                                  cv.put(MediaStore.Images.Media.DISPLAY_NAME, "vadlan_screen_" + System.currentTimeMillis() + ".png");
+                                  cv.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+                                  cv.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/VadLan");
+                                  Uri u = c.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
+                                  OutputStream os = c.getContentResolver().openOutputStream(u);
+                                  bmp.compress(Bitmap.CompressFormat.PNG, 100, os);
+                                  os.close();
+                                  Intent i = new Intent(Intent.ACTION_SEND).setType("image/png")
+                                          .putExtra(Intent.EXTRA_STREAM, u)
+                                          .putExtra(Intent.EXTRA_TEXT, prompt)
+                                          .setPackage(pkg)
+                                          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                  if (popup) c.startActivity(i, BubbleActs.popupOpts(c).toBundle());
+                                  else c.startActivity(i);
+                              } catch (Throwable e) {
+                                  Toast.makeText(c, BubbleActs.fa(c) ? "ارسال تصویر صفحه ممکن نشد" : "Could not send the screenshot",
+                                          Toast.LENGTH_SHORT).show();
+                              }
+                          }
+
+                          @Override
+                          public void onFailure(int code) {
+                              if (done != null) done.run();
+                              Toast.makeText(c, BubbleActs.fa(c) ? "گرفتن تصویر صفحه ممکن نشد؛ سرویس دسترسی‌پذیری را یک بار خاموش و روشن کنید"
+                                      : "Could not take the screenshot; turn the accessibility service off and on once",
+                                      Toast.LENGTH_LONG).show();
+                          }
+                      });
+                  } catch (Throwable e) {
+                      if (done != null) done.run();
+                  }
+              }
 
               static boolean click(String name) {
                   if (inst == null || name == null || name.trim().isEmpty()) return false;
@@ -342,8 +419,212 @@ jobs:
                   super.onDestroy();
               }
 
+              // ---------- recording the taps made inside an app ----------
+              private String recPkg = null;
+              private int recSlot = -1;
+              private JSONArray recSteps = new JSONArray();
+              private String lastStep = "";
+              private long lastStepAt = 0;
+              private TextView pill;
+
+              private boolean fa() { return getSharedPreferences("l", 0).getString("lang", "fa").equals("fa"); }
+
+              private int dp(int v) { return (int) (v * getResources().getDisplayMetrics().density); }
+
+              static boolean record(String pkg, int slot) {
+                  if (inst == null) return false;
+                  inst.startRecord(pkg, slot);
+                  return true;
+              }
+
+              private void launch(String pkg) {
+                  try {
+                      Intent i = getPackageManager().getLaunchIntentForPackage(pkg);
+                      if (i != null) {
+                          // a fresh start, so every recording and every replay begins on the first screen of the app
+                          i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                          startActivity(i);
+                      }
+                  } catch (Throwable e) { }
+              }
+
+              private void startRecord(String pkg, int slot) {
+                  recPkg = pkg;
+                  recSlot = slot;
+                  recSteps = new JSONArray();
+                  lastStep = "";
+                  launch(pkg);
+                  showPill();
+              }
+
+              private void showPill() {
+                  if (pill != null) return;
+                  try {
+                      WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+                      pill = new TextView(this);
+                      pill.setTextColor(0xFFFFFFFF);
+                      pill.setTextSize(14);
+                      pill.setPadding(dp(18), dp(10), dp(18), dp(10));
+                      GradientDrawable g = new GradientDrawable();
+                      g.setCornerRadius(dp(30));
+                      g.setColor(0xEEE53935);
+                      pill.setBackground(g);
+                      pill.setOnClickListener(v -> finishRecord());
+                      updatePill();
+                      WindowManager.LayoutParams lp = new WindowManager.LayoutParams(-2, -2,
+                              WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                              WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
+                      lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+                      lp.y = dp(56);
+                      wm.addView(pill, lp);
+                  } catch (Throwable e) { pill = null; }
+              }
+
+              private void updatePill() {
+                  if (pill != null) pill.setText((fa() ? "⏹ پایان ضبط (" : "⏹ Stop recording (") + recSteps.length() + ")");
+              }
+
+              private void hidePill() {
+                  try {
+                      if (pill != null) ((WindowManager) getSystemService(WINDOW_SERVICE)).removeView(pill);
+                  } catch (Throwable e) { }
+                  pill = null;
+              }
+
+              // the visible name of a view: its own text, or the first text inside it
+              private String labelOf(AccessibilityNodeInfo n, int depth) {
+                  if (n == null) return "";
+                  CharSequence t = n.getText();
+                  if (t != null && t.toString().trim().length() > 0) return t.toString().trim();
+                  CharSequence d = n.getContentDescription();
+                  if (d != null && d.toString().trim().length() > 0) return d.toString().trim();
+                  if (depth <= 0) return "";
+                  for (int i = 0; i < n.getChildCount(); i++) {
+                      String s = labelOf(n.getChild(i), depth - 1);
+                      if (!s.isEmpty()) return s;
+                  }
+                  return "";
+              }
+
               @Override
-              public void onAccessibilityEvent(AccessibilityEvent e) { }
+              public void onAccessibilityEvent(AccessibilityEvent e) {
+                  if (recPkg == null || e.getEventType() != AccessibilityEvent.TYPE_VIEW_CLICKED) return;
+                  if (!recPkg.equals(String.valueOf(e.getPackageName()))) return;
+                  AccessibilityNodeInfo n = e.getSource();
+                  if (n == null) return;
+                  try {
+                      String t = labelOf(n, 3);
+                      String id = n.getViewIdResourceName() == null ? "" : n.getViewIdResourceName();
+                      if (t.isEmpty() && id.isEmpty()) return;
+                      String key = t + "|" + id;
+                      long now = System.currentTimeMillis();
+                      if (key.equals(lastStep) && now - lastStepAt < 400) return;
+                      lastStep = key;
+                      lastStepAt = now;
+                      JSONObject o = new JSONObject();
+                      o.put("t", t);
+                      o.put("id", id);
+                      recSteps.put(o);
+                      updatePill();
+                  } catch (Throwable ex) { }
+              }
+
+              private void finishRecord() {
+                  hidePill();
+                  String pkg = recPkg;
+                  int slot = recSlot;
+                  JSONArray st = recSteps;
+                  recPkg = null;
+                  if (pkg == null) return;
+                  try {
+                      SharedPreferences sp = getSharedPreferences("l", 0);
+                      BubbleActs.Act[] a = BubbleActs.load(sp);
+                      if (slot >= 0 && slot < a.length && a[slot] != null && pkg.equals(a[slot].pkg)) {
+                          a[slot].id = st.toString();
+                          a[slot].label = "🎬 " + st.length() + (fa() ? " مرحله" : " steps");
+                          BubbleActs.save(sp, a);
+                      }
+                  } catch (Throwable e) { }
+                  Toast.makeText(this, fa() ? "ضبط ذخیره شد" : "Recording saved", Toast.LENGTH_SHORT).show();
+                  try {
+                      Intent i = new Intent(this, MainActivity.class)
+                              .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                              .putExtra("open_acts", true);
+                      startActivity(i);
+                  } catch (Throwable e) { }
+              }
+
+              // ---------- playing the recorded taps back ----------
+              private JSONArray steps = new JSONArray();
+              private int stepIdx = 0, stepTries = 0;
+              private String repPkg = "";
+
+              static boolean replay(String pkg, String json) {
+                  if (inst == null) return false;
+                  inst.startReplay(pkg, json);
+                  return true;
+              }
+
+              private void startReplay(String pkg, String json) {
+                  if (busy) return;
+                  try { steps = new JSONArray(json == null || json.isEmpty() ? "[]" : json); } catch (Throwable e) { steps = new JSONArray(); }
+                  repPkg = pkg;
+                  stepIdx = 0;
+                  stepTries = 0;
+                  busy = true;
+                  launch(pkg);
+                  h.postDelayed(stepRun, 1500);
+              }
+
+              private final Runnable stepRun = new Runnable() {
+                  @Override
+                  public void run() {
+                      if (stepIdx >= steps.length()) { busy = false; return; }
+                      JSONObject o = steps.optJSONObject(stepIdx);
+                      if (o != null && tapStep(o.optString("t"), o.optString("id"))) {
+                          stepIdx++;
+                          stepTries = 0;
+                          h.postDelayed(this, 900);
+                          return;
+                      }
+                      if (++stepTries < 26) {
+                          h.postDelayed(this, 300);
+                      } else {
+                          busy = false;
+                          Toast.makeText(TileClickService.this, (fa() ? "مرحله " : "Step ") + (stepIdx + 1)
+                                  + (fa() ? " پیدا نشد؛ دوباره ضبط کنید" : " not found; record it again"), Toast.LENGTH_LONG).show();
+                      }
+                  }
+              };
+
+              private boolean clickUp(AccessibilityNodeInfo n) {
+                  AccessibilityNodeInfo c = n;
+                  for (int i = 0; i < 7 && c != null; i++) {
+                      if (c.isClickable() && c.isEnabled() && c.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true;
+                      c = c.getParent();
+                  }
+                  return false;
+              }
+
+              private boolean tapStep(String text, String id) {
+                  for (AccessibilityNodeInfo root : roots()) {
+                      if (!repPkg.equals(String.valueOf(root.getPackageName()))) continue;
+                      List<AccessibilityNodeInfo> exact = new ArrayList<>(), loose = new ArrayList<>();
+                      if (!text.isEmpty()) {
+                          List<AccessibilityNodeInfo> hits = root.findAccessibilityNodeInfosByText(text);
+                          if (hits != null) for (AccessibilityNodeInfo n : hits) {
+                              if (labelOf(n, 0).equalsIgnoreCase(text)) exact.add(n); else loose.add(n);
+                          }
+                      }
+                      if (exact.isEmpty() && loose.isEmpty() && !id.isEmpty()) {
+                          List<AccessibilityNodeInfo> hits = root.findAccessibilityNodeInfosByViewId(id);
+                          if (hits != null) exact.addAll(hits);
+                      }
+                      for (AccessibilityNodeInfo n : exact) if (clickUp(n)) return true;
+                      for (AccessibilityNodeInfo n : loose) if (clickUp(n)) return true;
+                  }
+                  return false;
+              }
 
               @Override
               public void onInterrupt() { }
@@ -638,7 +919,7 @@ jobs:
               static final int MAX = 20;
 
               static class Act {
-                  String pkg, type, id, label;   // type: "sc" shortcut, "cmp" screen, "rcv" receiver, "svc" service, "tile" quick settings tile, "app" open the app
+                  String pkg, type, id, label, name = "";   // name = the custom name shown in the bubble list; type: "sc" shortcut, "cmp" screen, "rcv" receiver, "svc" service, "tile" quick settings tile, "macro" recorded taps inside the app (steps in id), "app" open the app (id: "popup" or "full")
                   long ts;                       // last time this action was saved / chosen
               }
 
@@ -654,6 +935,7 @@ jobs:
                           x.type = o.optString("type", "app");
                           x.id = o.optString("id", "");
                           x.label = o.optString("label", "");
+                          x.name = o.optString("name", "");
                           x.ts = o.optLong("ts", 0);
                           a[i] = x;
                       }
@@ -672,6 +954,7 @@ jobs:
                               o.put("type", x.type);
                               o.put("id", x.id == null ? "" : x.id);
                               o.put("label", x.label == null ? "" : x.label);
+                              o.put("name", x.name == null ? "" : x.name);
                               o.put("ts", x.ts);
                           }
                           arr.put(o);
@@ -699,6 +982,21 @@ jobs:
                   for (Act x : a)
                       if (x != null && x.pkg.equals(pkg) && (best == null || x.ts > best.ts)) best = x;
                   return best;
+              }
+
+              // the name shown in the bubble list: the custom name, or the app name
+              static String title(Context c, Act x) {
+                  return x.name != null && !x.name.isEmpty() ? x.name : appLabel(c, x.pkg);
+              }
+
+              // asks the person to turn on the accessibility service (needed for tiles and recorded taps)
+              static void needA11y(Context c) {
+                  boolean fa = c.getSharedPreferences("l", 0).getString("lang", "fa").equals("fa");
+                  Toast.makeText(c, fa ? "سرویس دسترسی‌پذیری VadLan را روشن کنید" : "Turn on the VadLan accessibility service",
+                          Toast.LENGTH_LONG).show();
+                  try {
+                      c.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                  } catch (Throwable e) { }
               }
 
               static String appLabel(Context c, String pkg) {
@@ -736,16 +1034,12 @@ jobs:
                           return true;
                       }
                       if ("tile".equals(x.type)) {               // a Quick Settings tile, tapped by the accessibility service
-                          if (!TileClickService.ready()) {
-                              boolean fa = c.getSharedPreferences("l", 0).getString("lang", "fa").equals("fa");
-                              Toast.makeText(c, fa ? "سرویس دسترسی‌پذیری VadLan را روشن کنید" : "Turn on the VadLan accessibility service",
-                                      Toast.LENGTH_LONG).show();
-                              try {
-                                  c.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-                              } catch (Throwable e) { }
-                              return false;
-                          }
+                          if (!TileClickService.ready()) { needA11y(c); return false; }
                           return TileClickService.click(x.id);
+                      }
+                      if ("macro".equals(x.type)) {              // taps recorded inside the app, played back one by one
+                          if (!TileClickService.ready()) { needA11y(c); return false; }
+                          return TileClickService.replay(x.pkg, x.id);
                       }
                       if ("app".equals(x.type)) {                // open the app itself (chosen on purpose)
                           Intent i = c.getPackageManager().getLaunchIntentForPackage(x.pkg);
@@ -826,6 +1120,151 @@ jobs:
                   return out;
               }
 
+              // ---------- bubble moves (swipes) ----------
+              static final int SW_MAX = 30;
+              static final int AI_N = 9;
+              static final String GEM = "com.google.android.apps.bard", GPT = "com.openai.chatgpt",
+                      CLA = "com.anthropic.claude", TRN = "com.google.android.apps.translate";
+              static final String[] AI_PKG = {GEM, GPT, CLA, GEM, GEM, GEM, TRN, TRN, TRN};
+              static final String[] AI_FA = {"جمنای", "ChatGPT", "کلود", "جمنای (حالت صوتی)", "جمنای (حالت ویدیو)",
+                      "جمنای (تحلیل صفحه نمایش)", "گوگل ترنسلیت (ترجمه با تایپ)", "گوگل ترنسلیت (ترجمه صوتی)",
+                      "گوگل ترنسلیت (ترجمه با دوربین)"};
+              static final String[] AI_EN = {"Gemini", "ChatGPT", "Claude", "Gemini (voice mode)", "Gemini (video mode)",
+                      "Gemini (analyze screen)", "Google Translate (typing)", "Google Translate (voice)",
+                      "Google Translate (camera)"};
+
+              static String aiName(boolean fa, int id) { return fa ? AI_FA[id] : AI_EN[id]; }
+
+              static String aiPkg(int id) { return AI_PKG[id]; }
+
+              static boolean fa(Context c) {
+                  return c.getSharedPreferences("l", 0).getString("lang", "fa").equals("fa");
+              }
+
+              // apps chosen for one direction: {package, "popup" or "full"}
+              static List<String[]> swList(SharedPreferences sp, String d) {
+                  List<String[]> l = new ArrayList<>();
+                  try {
+                      JSONArray a = new JSONArray(sp.getString("swl_" + d, "[]"));
+                      for (int i = 0; i < a.length() && i < SW_MAX; i++) {
+                          JSONObject o = a.optJSONObject(i);
+                          if (o != null && o.has("pkg")) l.add(new String[]{o.optString("pkg"), o.optString("win", "full")});
+                      }
+                  } catch (Exception e) { }
+                  return l;
+              }
+              static void swSave(SharedPreferences sp, String d, List<String[]> l) {
+                  JSONArray a = new JSONArray();
+                  try {
+                      for (String[] e : l) a.put(new JSONObject().put("pkg", e[0]).put("win", e[1]));
+                  } catch (Exception e) { }
+                  sp.edit().putString("swl_" + d, a.toString()).apply();
+              }
+
+              // order of the AI actions of one direction (every action appears once)
+              static int[] aiOrder(SharedPreferences sp, String d) {
+                  int[] o = new int[AI_N];
+                  boolean[] seen = new boolean[AI_N];
+                  int n = 0;
+                  for (String p : sp.getString("swai_" + d + "_o", "").split(",")) {
+                      try {
+                          int v = Integer.parseInt(p.trim());
+                          if (v >= 0 && v < AI_N && !seen[v]) { seen[v] = true; o[n++] = v; }
+                      } catch (Exception e) { }
+                  }
+                  for (int v = 0; v < AI_N; v++) if (!seen[v]) o[n++] = v;
+                  return o;
+              }
+
+              static void aiSaveOrder(SharedPreferences sp, String d, int[] o) {
+                  StringBuilder b = new StringBuilder();
+                  for (int i = 0; i < o.length; i++) b.append(i > 0 ? "," : "").append(o[i]);
+                  sp.edit().putString("swai_" + d + "_o", b.toString()).apply();
+              }
+
+              static String aiWin(SharedPreferences sp, String d, int id) {
+                  return sp.getString("swai_" + d + "_w" + id, "full");
+              }
+
+              // a window of the size saved from "Run apps": the same size as the popups the launcher opens
+              static android.app.ActivityOptions popupOpts(Context c) {
+                  android.app.ActivityOptions o = android.app.ActivityOptions.makeBasic();
+                  try {
+                      String[] q = c.getSharedPreferences("l", 0).getString("runRect", "").split(",");
+                      if (q.length == 4) o.setLaunchBounds(new android.graphics.Rect(
+                              Integer.parseInt(q[0]), Integer.parseInt(q[1]), Integer.parseInt(q[2]), Integer.parseInt(q[3])));
+                  } catch (Throwable e) { }
+                  return o;
+              }
+
+              // opens an app, as a popup or full
+              static boolean openApp(Context c, String pkg, boolean popup) {
+                  try {
+                      Intent i = c.getPackageManager().getLaunchIntentForPackage(pkg);
+                      if (i == null) return false;
+                      i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                      if (popup) c.startActivity(i, popupOpts(c).toBundle());
+                      else c.startActivity(i);
+                      return true;
+                  } catch (Throwable e) {
+                      return false;
+                  }
+              }
+
+              // starts the shortcut of an app whose name contains one of the words
+              static boolean shortcutBy(Context c, String pkg, String[] words, boolean popup) {
+                  try {
+                      for (ShortcutInfo si : shortcuts(c, pkg)) {
+                          String s = ((si.getShortLabel() == null ? "" : si.getShortLabel()) + " "
+                                  + (si.getLongLabel() == null ? "" : si.getLongLabel())).toLowerCase();
+                          for (String w : words) {
+                              if (s.contains(w)) {
+                                  LauncherApps la = (LauncherApps) c.getSystemService(Context.LAUNCHER_APPS_SERVICE);
+                                  la.startShortcut(pkg, si.getId(), null, popup ? popupOpts(c).toBundle() : null, Process.myUserHandle());
+                                  return true;
+                              }
+                          }
+                      }
+                  } catch (Throwable e) { }
+                  return false;
+              }
+
+              // a mode inside an app: its shortcut, else one of the given intents, else the app itself
+              static boolean deep(Context c, String pkg, boolean popup, String[] words, String[] actions) {
+                  if (c.getPackageManager().getLaunchIntentForPackage(pkg) == null) return false;
+                  if (shortcutBy(c, pkg, words, popup)) return true;
+                  if (actions != null) {
+                      for (String a : actions) {
+                          try {
+                              Intent i = new Intent(a).setPackage(pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                              if (i.resolveActivity(c.getPackageManager()) == null) continue;
+                              if (popup) c.startActivity(i, popupOpts(c).toBundle());
+                              else c.startActivity(i);
+                              return true;
+                          } catch (Throwable e) { }
+                      }
+                  }
+                  Toast.makeText(c, fa(c) ? "حالت مستقیم پیدا نشد؛ خود برنامه باز شد" : "The direct mode was not found; the app opened",
+                          Toast.LENGTH_SHORT).show();
+                  return openApp(c, pkg, popup);
+              }
+
+              // runs one AI action (the screen analysis, id 5, is done by the bubble service)
+              static boolean runAi(Context c, int id, boolean popup) {
+                  switch (id) {
+                      case 0: return openApp(c, GEM, popup);
+                      case 1: return openApp(c, GPT, popup);
+                      case 2: return openApp(c, CLA, popup);
+                      case 3: return deep(c, GEM, popup, new String[]{"live", "voice", "talk", "صوت", "زنده", "گفت", "مکالمه"},
+                              new String[]{"android.intent.action.VOICE_ASSIST"});
+                      case 4: return deep(c, GEM, popup, new String[]{"video", "camera", "ویدیو", "دوربین"}, null);
+                      case 6: return openApp(c, TRN, popup);
+                      case 7: return deep(c, TRN, popup, new String[]{"conversation", "voice", "speak", "transcribe", "مکالمه", "گفتگو", "صوت", "گفت"}, null);
+                      case 8: return deep(c, TRN, popup, new String[]{"camera", "دوربین"}, null);
+                  }
+                  return false;
+              }
+
               static boolean hasUsage(Context c) {
                   try {
                       AppOpsManager ao = (AppOpsManager) c.getSystemService(Context.APP_OPS_SERVICE);
@@ -863,6 +1302,9 @@ jobs:
           import android.app.Notification;
           import android.app.NotificationChannel;
           import android.app.NotificationManager;
+          import android.animation.Animator;
+          import android.animation.AnimatorListenerAdapter;
+          import android.animation.ValueAnimator;
           import android.app.Service;
           import android.content.Intent;
           import android.content.SharedPreferences;
@@ -870,6 +1312,9 @@ jobs:
           import android.graphics.Canvas;
           import android.graphics.Paint;
           import android.graphics.PixelFormat;
+          import android.graphics.LinearGradient;
+          import android.graphics.RectF;
+          import android.graphics.Shader;
           import android.graphics.SweepGradient;
           import android.graphics.drawable.GradientDrawable;
           import android.os.Build;
@@ -881,8 +1326,12 @@ jobs:
           import android.view.Gravity;
           import android.view.MotionEvent;
           import android.view.View;
+          import android.view.ViewPropertyAnimator;
           import android.view.WindowManager;
+          import android.view.animation.DecelerateInterpolator;
+          import android.view.animation.OvershootInterpolator;
           import android.widget.FrameLayout;
+          import android.widget.ImageView;
           import android.widget.LinearLayout;
           import android.widget.ScrollView;
           import android.widget.TextView;
@@ -907,6 +1356,7 @@ jobs:
                   @Override
                   public void run() {
                       if (listRoot != null) return; // the action list is open: the bubble stays out
+                      if (backAnim != null) return; // the bubble is gliding back
                       if (bubbleView != null && params != null) {
                           int sw = getResources().getDisplayMetrics().widthPixels;
                           boolean right = sp.getInt("mock_px", 70) > 50;
@@ -1014,13 +1464,163 @@ jobs:
                   boolean lau = sp.getBoolean("bub_launcher", true);
                   boolean act = sp.getBoolean("bub_act_on", false);
                   boolean has = BubbleActs.pkgs(BubbleActs.load(sp)).size() > 0;
-                  if (act && has) openList(lau);
-                  else if (lau) openLauncher(false);
+                  if (act && has) {
+                      dropSquash();
+                      openList(lau);
+                  } else if (lau) {
+                      openLauncher(false);
+                  }
+              }
+
+              private ValueAnimator backAnim;
+
+              // after a swipe the bubble glides back to its own place with a soft, quick spring
+              private void springBack(final int tx0, final int ty0, final Runnable after) {
+                  if (params == null || bubbleView == null) return;
+                  if (backAnim != null) backAnim.cancel();
+                  final int fx0 = params.x, fy0 = params.y;
+                  final ValueAnimator an = ValueAnimator.ofFloat(0f, 1f);
+                  backAnim = an;
+                  an.setDuration(200);
+                  an.setInterpolator(new OvershootInterpolator(1.1f));
+                  an.addUpdateListener(a -> {
+                      if (bubbleView == null) return;
+                      float t = (Float) a.getAnimatedValue();
+                      params.x = fx0 + Math.round((tx0 - fx0) * t);
+                      params.y = fy0 + Math.round((ty0 - fy0) * t);
+                      try { wm.updateViewLayout(bubbleView, params); } catch (Exception e) { }
+                  });
+                  an.addListener(new AnimatorListenerAdapter() {
+                      boolean cancelled;
+                      @Override
+                      public void onAnimationCancel(Animator x) { cancelled = true; }
+                      @Override
+                      public void onAnimationEnd(Animator x) {
+                          if (backAnim != an) return;
+                          backAnim = null;
+                          if (params != null) { params.x = tx0; params.y = ty0; }
+                          if (bubbleView != null) {
+                              try { wm.updateViewLayout(bubbleView, params); } catch (Exception e) { }
+                          }
+                          handler.removeCallbacks(collapseRunnable);
+                          if (listRoot == null) handler.postDelayed(collapseRunnable, collapseDelay());
+                          if (after != null && !cancelled) after.run();
+                      }
+                  });
+                  an.start();
+              }
+
+              // the bubble is pressed and pulled like a water drop, then springs back
+              private void dropSquash() {
+                  final View b = bubbleView;
+                  if (b == null) return;
+                  b.animate().cancel();
+                  b.setPivotX(b.getWidth() / 2f);
+                  b.setPivotY(b.getHeight() / 2f);
+                  b.animate().scaleX(1.16f).scaleY(0.78f).setDuration(110)
+                          .withEndAction(() -> b.animate().scaleX(1f).scaleY(1f).setDuration(520)
+                                  .setInterpolator(new OvershootInterpolator(4f)).start()).start();
+              }
+
+              // dragging the bubble up / left / down / right opens the app chosen for that direction
+              private void runSwipe(float dx, float dy) {
+                  if (Math.abs(dy) >= Math.abs(dx) && dy < 0) {
+                      openLauncher(false);   // up: the VadLan app itself
+                      return;
+                  }
+                  final String d = Math.abs(dy) >= Math.abs(dx) ? "down" : (dx < 0 ? "left" : "right");
+                  final boolean fa = fa();
+                  if (sp.getBoolean("swai_" + d, false)) {
+                      // AI: a list like the action list, with the AI actions in the chosen order
+                      List<LItem> l = new java.util.ArrayList<>();
+                      for (final int id : BubbleActs.aiOrder(sp, d)) {
+                          LItem it = new LItem();
+                          it.pkg = BubbleActs.aiPkg(id);
+                          it.text = BubbleActs.aiName(fa, id);
+                          it.click = () -> { closeList(); runAiItem(d, id); };
+                          l.add(it);
+                      }
+                      dropSquash();
+                      openCustomList(l);
+                      return;
+                  }
+                  if ("list".equals(sp.getString("swm_" + d, ""))) {
+                      // a list of apps, in the look of the action list
+                      List<LItem> l = new java.util.ArrayList<>();
+                      for (final String[] e : BubbleActs.swList(sp, d)) {
+                          if (getPackageManager().getLaunchIntentForPackage(e[0]) == null) continue;
+                          LItem it = new LItem();
+                          it.pkg = e[0];
+                          it.text = BubbleActs.appLabel(this, e[0]);
+                          it.click = () -> { closeList(); runApp(e[0], "popup".equals(e[1])); };
+                          l.add(it);
+                      }
+                      if (!l.isEmpty()) {
+                          dropSquash();
+                          openCustomList(l);
+                      }
+                      return;
+                  }
+                  String pkg = sp.getString("swipe_" + d, "");
+                  if (pkg == null || pkg.isEmpty()) return;
+                  runApp(pkg, "popup".equals(sp.getString("swipe_" + d + "_w", "full")));
+              }
+
+              private void runApp(String pkg, boolean popup) {
+                  if (!BubbleActs.openApp(this, pkg, popup))
+                      Toast.makeText(this, tr("برنامه پیدا نشد", "App not found"), Toast.LENGTH_SHORT).show();
+              }
+
+              private void runAiItem(String d, int id) {
+                  boolean popup = "popup".equals(BubbleActs.aiWin(sp, d, id));
+                  if (id == 5) { aiScreen(popup); return; }
+                  if (!BubbleActs.runAi(this, id, popup))
+                      Toast.makeText(this, tr("برنامه نصب نیست", "The app is not installed"), Toast.LENGTH_SHORT).show();
+              }
+
+              // the screen is pictured (without the bubble) and handed to Gemini
+              private void aiScreen(final boolean popup) {
+                  if (getPackageManager().getLaunchIntentForPackage(BubbleActs.GEM) == null) {
+                      Toast.makeText(this, tr("برنامه نصب نیست", "The app is not installed"), Toast.LENGTH_SHORT).show();
+                      return;
+                  }
+                  if (!TileClickService.ready()) { BubbleActs.needA11y(this); return; }
+                  if (Build.VERSION.SDK_INT < 30) {
+                      Toast.makeText(this, tr("تحلیل صفحه به اندروید ۱۱ یا بالاتر نیاز دارد", "Screen analysis needs Android 11 or newer"),
+                              Toast.LENGTH_SHORT).show();
+                      BubbleActs.openApp(this, BubbleActs.GEM, popup);
+                      return;
+                  }
+                  if (bubbleView != null) bubbleView.setVisibility(View.INVISIBLE);
+                  long wait = (sp.getInt("bub_fx", 6) == 0 ? 0 : Math.max(80, Math.min(1500, sp.getInt("bub_fxms", 300)) / 2)) + 250;
+                  handler.postDelayed(() -> TileClickService.shotAndShare(this, BubbleActs.GEM, popup,
+                          tr("این صفحه را تحلیل کن", "Analyze this screen"), () -> applyVisibility()), wait);
               }
 
               private boolean listWithLauncher = false;
 
+              // one box of a list that is not the action list (the lists of the bubble moves)
+              static class LItem {
+                  String dot;
+                  int dotColor;
+                  String pkg;
+                  String text;
+                  Runnable click;
+              }
+
+              private List<LItem> customItems = null;
+
               private void openList(boolean withLauncher) {
+                  customItems = null;
+                  openListCore(withLauncher);
+              }
+
+              private void openCustomList(List<LItem> items) {
+                  customItems = items;
+                  openListCore(false);
+              }
+
+              private void openListCore(boolean withLauncher) {
                   listWithLauncher = withLauncher;
                   handler.removeCallbacks(collapseRunnable);
                   applyPosition();
@@ -1065,15 +1665,89 @@ jobs:
                           listParams.setBlurBehindRadius(dpToPx(24));
                       } catch (Throwable e) { }
                   }
-                  fillList(null);
+                  fillList();
+                  if (sp.getInt("bub_fx", 6) != 0) listRoot.setAlpha(0f);   // the opening effect shows it
                   layoutList(true);
+                  playOpen();
+              }
+
+              // opening effect of the action list (0 none, 1 fade, 2 slide from the side, 3 grow from the bubble, 5 slide from the top, 6 stretchy drop)
+              private void playOpen() {
+                  final FrameLayout r = listRoot;
+                  final int fx = sp.getInt("bub_fx", 6);
+                  if (r == null || fx == 0) return;
+                  final long ms = Math.max(100, Math.min(1500, sp.getInt("bub_fxms", 300)));
+                  final boolean right = sp.getInt("mock_px", 70) > 50;
+                  r.post(() -> {
+                      if (listRoot != r) return;
+                      int w = Math.max(1, r.getWidth()), h = Math.max(1, r.getHeight());
+                      ViewPropertyAnimator an = r.animate().setDuration(ms);
+                      if (fx == 2) {
+                          r.setTranslationX((right ? 1 : -1) * (w + dpToPx(16)));
+                          r.setAlpha(1f);
+                          an.translationX(0).setInterpolator(new DecelerateInterpolator(2f));
+                      } else if (fx == 3) {
+                          r.setPivotX(right ? w : 0);
+                          r.setPivotY(0);
+                          r.setScaleX(0.1f);
+                          r.setScaleY(0.1f);
+                          an.scaleX(1f).scaleY(1f).alpha(1f).setInterpolator(new DecelerateInterpolator());
+                      } else if (fx == 6) {
+                          // a drop that stretches out of the bubble, wobbles and settles
+                          float bubCx = params.x + params.width / 2f;
+                          float px = Math.max(0f, Math.min(w, bubCx - listParams.x));
+                          boolean above = listParams.y < params.y;
+                          r.setPivotX(px);
+                          r.setPivotY(above ? h : 0);
+                          r.setScaleX(0.3f);
+                          r.setScaleY(0.05f);
+                          r.setAlpha(1f);
+                          ValueAnimator va = ValueAnimator.ofFloat(0f, 1f);
+                          va.setDuration(Math.max(450, ms * 2));
+                          va.addUpdateListener(a -> {
+                              if (listRoot != r) return;
+                              float t = (Float) a.getAnimatedValue();
+                              float e = 1f - (float) Math.pow(1f - t, 3);
+                              float y = 1f - (float) (Math.exp(-5f * t) * Math.cos(9f * t));
+                              y = Math.max(0.05f, y);
+                              float x = (0.3f + 0.7f * e) - 0.6f * Math.max(0f, y - 1f);
+                              r.setScaleX(Math.max(0.2f, x));
+                              r.setScaleY(y);
+                          });
+                          va.addListener(new AnimatorListenerAdapter() {
+                              @Override
+                              public void onAnimationEnd(Animator an2) {
+                                  r.setScaleX(1f);
+                                  r.setScaleY(1f);
+                              }
+                          });
+                          va.start();
+                          return;
+                      } else if (fx == 5) {
+                          r.setTranslationY(-(h + dpToPx(24)));
+                          r.setAlpha(1f);
+                          an.translationY(0).setInterpolator(new DecelerateInterpolator(2f));
+                      } else {
+                          an.alpha(1f);
+                      }
+                      an.start();
+                  });
               }
 
               private void closeList() {
-                  if (listRoot != null) {
-                      try { wm.removeView(listRoot); } catch (Exception e) {}
-                      listRoot = null;
-                      listCard = null;
+                  final FrameLayout old = listRoot;
+                  listRoot = null;
+                  listCard = null;
+                  customItems = null;
+                  if (old != null) {
+                      final int fx = sp.getInt("bub_fx", 6);
+                      if (fx == 0) {
+                          try { wm.removeView(old); } catch (Exception e) {}
+                      } else {
+                          // a short fade-out, then the window goes
+                          old.animate().alpha(0f).setDuration(Math.max(80, Math.min(1500, sp.getInt("bub_fxms", 300)) / 2))
+                                  .withEndAction(() -> { try { wm.removeView(old); } catch (Exception e) {} }).start();
+                      }
                   }
                   handler.removeCallbacks(collapseRunnable);
                   handler.postDelayed(collapseRunnable, collapseDelay());
@@ -1091,7 +1765,18 @@ jobs:
                   // separate boxes: the height lever sizes every box; otherwise it limits the height of the whole list
                   int maxH = sepL ? sh : sh * Math.max(20, Math.min(100, sp.getInt("bub_lh", 100))) / 100;
                   int h = Math.min(listCard.getMeasuredHeight(), maxH);
-                  int gap = dpToPx(6), edge = dpToPx(24);
+                  // "number of boxes": only that many rows are visible, the rest wait below (or above) and scroll in
+                  int cnt = Math.max(2, Math.min(20, sp.getInt("bub_cnt", 20)));
+                  if (listCard.getChildCount() > cnt) {
+                      int hc = listCard.getPaddingTop() + listCard.getPaddingBottom();
+                      for (int i = 0; i < cnt; i++) {
+                          View cv = listCard.getChildAt(i);
+                          LinearLayout.LayoutParams clp = (LinearLayout.LayoutParams) cv.getLayoutParams();
+                          hc += cv.getMeasuredHeight() + clp.topMargin + clp.bottomMargin;
+                      }
+                      h = Math.min(h, hc);
+                  }
+                  int gap = dpToPx(2) - Math.round(params.height * 0.06f), edge = dpToPx(24);
                   int y = params.y + params.height + gap;
                   int room = sh - y - edge;
                   if (room < Math.min(h, dpToPx(160)) && params.y > room) {
@@ -1138,18 +1823,24 @@ jobs:
                   return tv;
               }
 
-              private void addListItem(String dot, int dotColor, String text, Runnable click, Runnable longClick) {
+              // one box of the list: optional dot, the app icon and / or the name
+              private void addListItem(String dot, int dotColor, String pkg, String text, Runnable click) {
                   final boolean sep = sp.getBoolean("bub_sep", false);
+                  boolean showIco = sp.getBoolean("bub_ico", false) && pkg != null;
+                  boolean showNm = sp.getBoolean("bub_nm", true) || !showIco;   // the icon and the name are never both off
                   int ts = Math.max(10, Math.min(28, sp.getInt("bub_lts", 15)));
+                  int isz = dpToPx(Math.max(5, Math.min(32, sp.getInt("bub_isz", 20))));
                   LinearLayout row = new LinearLayout(this);
                   row.setGravity(Gravity.CENTER_VERTICAL);
+                  if (showIco) row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);   // the name sits to the right of its icon
+                  int content = Math.max(showNm ? (int) (dpToPx(ts) * 1.5f) : 0, showIco ? isz + dpToPx(6) : 0);
                   int vp = Math.max(dpToPx(6), dpToPx(11) * ts / 15);
                   row.setPadding(dpToPx(12), sep ? 0 : vp, dpToPx(12), sep ? 0 : vp);
                   int boxH = 0;
                   if (sep) {
-                      // one box per app: the height lever sizes all boxes together
+                      // one box per action: the height lever sizes all boxes together
                       int lh = Math.max(20, Math.min(100, sp.getInt("bub_lh", 100)));
-                      boxH = Math.max(dpToPx(8) + dpToPx(52) * lh / 100, (int) (dpToPx(ts) * 1.5f));
+                      boxH = Math.max(dpToPx(8) + dpToPx(52) * lh / 100, content);
                       row.setBackground(boxDrawable(sp.getInt("bub_lcol", 0xF2202024), sp.getBoolean("bub_lglass", false), dpToPx(14)));
                   }
                   if (dot != null) {
@@ -1158,7 +1849,21 @@ jobs:
                       dl.setMarginEnd(dpToPx(8));
                       row.addView(d, dl);
                   }
-                  row.addView(listText(text, ts, 0xFFFFFFFF), new LinearLayout.LayoutParams(0, -2, 1));
+                  if (showIco) {
+                      ImageView iv = new ImageView(this);
+                      try { iv.setImageDrawable(getPackageManager().getApplicationIcon(pkg)); } catch (Throwable e) { }
+                      iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                      LinearLayout.LayoutParams il = new LinearLayout.LayoutParams(isz, isz);
+                      if (showNm) il.setMarginEnd(dpToPx(8));
+                      row.addView(iv, il);
+                  }
+                  if (showNm) {
+                      TextView nameTv = listText(text, ts, 0xFFFFFFFF);
+                      if (showIco) nameTv.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                      row.addView(nameTv, new LinearLayout.LayoutParams(0, -2, 1));
+                  } else {
+                      row.setGravity(Gravity.CENTER);
+                  }
                   row.setOnTouchListener((v, ev) -> {
                       int a = ev.getAction();
                       if (sep) {
@@ -1171,68 +1876,45 @@ jobs:
                       return false;
                   });
                   row.setOnClickListener(v -> click.run());
-                  if (longClick != null) row.setOnLongClickListener(v -> { longClick.run(); return true; });
                   LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, sep ? boxH : -2);
                   if (sep && listCard.getChildCount() > 0) lp.topMargin = gapPx();
                   listCard.addView(row, lp);
               }
 
-              // sub == null: the apps that have actions; otherwise: the actions of that one app
-              private void fillList(final String sub) {
+              // one box for every saved action, named with the custom name
+              private void fillList() {
                   if (listCard == null) return;
                   listCard.removeAllViews();
+                  if (customItems != null) {
+                      for (LItem it : customItems) addListItem(it.dot, it.dotColor, it.pkg, it.text, it.click);
+                      return;
+                  }
                   final BubbleActs.Act[] all = BubbleActs.load(sp);
-                  if (sub == null) {
-                      if (listWithLauncher) {
-                          addListItem(null, 0, "🏠 " + tr("لانچر", "Launcher"), () -> {
-                              closeList();
-                              openLauncher(false);
-                          }, null);
-                      }
-                      for (final String pkg : BubbleActs.pkgs(all)) {
-                          boolean on = sp.getBoolean("bub_on_" + pkg, false);
-                          addListItem("●", on ? 0xFF4CAF50 : 0x55FFFFFF, BubbleActs.appLabel(this, pkg), () -> {
-                              BubbleActs.Act cur = BubbleActs.current(BubbleActs.load(sp), pkg);
-                              if (cur != null && BubbleActs.opensAppOnly(this, cur)) {
-                                  Toast.makeText(this, tr("این عملکرد فقط برنامه را باز می‌کند؛ در تنظیمات یک میان‌بر یا بخشی از برنامه ثبت کنید",
-                                          "This action only opens the app; save a shortcut or an app part in the settings"), Toast.LENGTH_LONG).show();
-                              } else if (cur != null && BubbleActs.run(this, cur)) {
-                                  // the same action again toggles it (connect / disconnect)
-                                  sp.edit().putBoolean("bub_on_" + pkg, !sp.getBoolean("bub_on_" + pkg, false)).apply();
-                              } else if (cur == null || !"tile".equals(cur.type)) {
+                  if (listWithLauncher) {
+                      addListItem(null, 0, getPackageName(), "🏠 " + tr("لانچر", "Launcher"), () -> {
+                          closeList();
+                          openLauncher(false);
+                      });
+                  }
+                  for (int i = 0; i < all.length; i++) {
+                      final BubbleActs.Act a = all[i];
+                      if (a == null) continue;
+                      final int slot = i;
+                      final boolean tile = "tile".equals(a.type);
+                      boolean on = tile && sp.getBoolean("bub_on_s" + i, false);
+                      addListItem(tile ? "●" : null, on ? 0xFF4CAF50 : 0x55FFFFFF, a.pkg, BubbleActs.title(this, a), () -> {
+                          BubbleActs.Act cur = BubbleActs.load(sp)[slot];
+                          if (cur != null) {
+                              if (BubbleActs.run(this, cur)) {
+                                  // a tile pressed again toggles back (connect / disconnect)
+                                  if ("tile".equals(cur.type))
+                                      sp.edit().putBoolean("bub_on_s" + slot, !sp.getBoolean("bub_on_s" + slot, false)).apply();
+                              } else if (!"tile".equals(cur.type) && !"macro".equals(cur.type)) {
                                   Toast.makeText(this, tr("اجرای عملکرد ممکن نشد", "Could not run the action"), Toast.LENGTH_SHORT).show();
                               }
-                              closeList();
-                          }, () -> {
-                              // long press: pick which action of this app is used
-                              fillList(pkg);
-                              layoutList(false);
-                          });
-                      }
-                  } else {
-                      addListItem(null, 0, "‹ " + BubbleActs.appLabel(this, sub), () -> {
-                          fillList(null);
-                          layoutList(false);
-                      }, null);
-                      for (int i = 0; i < all.length; i++) {
-                          final BubbleActs.Act a = all[i];
-                          if (a == null || !a.pkg.equals(sub)) continue;
-                          final int slot = i;
-                          addListItem(String.valueOf(i + 1), 0xFF90CAF9, a.label.isEmpty() ? a.type : a.label, () -> {
-                              BubbleActs.Act[] cur = BubbleActs.load(sp);
-                              if (cur[slot] != null) {
-                                  cur[slot].ts = System.currentTimeMillis();
-                                  BubbleActs.save(sp, cur);
-                                  if (BubbleActs.opensAppOnly(this, cur[slot])) {
-                                      Toast.makeText(this, tr("این عملکرد فقط برنامه را باز می‌کند؛ در تنظیمات یک میان‌بر یا بخشی از برنامه ثبت کنید",
-                                              "This action only opens the app; save a shortcut or an app part in the settings"), Toast.LENGTH_LONG).show();
-                                  } else if (BubbleActs.run(this, cur[slot])) {
-                                      sp.edit().putBoolean("bub_on_" + sub, true).apply();
-                                  }
-                              }
-                              closeList();
-                          }, null);
-                      }
+                          }
+                          closeList();
+                      });
                   }
               }
 
@@ -1248,31 +1930,73 @@ jobs:
 
                   bubbleView = new View(this) {
                       Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                      final int[] cols = {0xFFFBBC00, 0xFFFC9A00, 0xFFFF5608, 0xFFFF2813, 0xFFA41A4A, 0xFF8600B2,
+                              0xFF3D00A5, 0xFF0044FF, 0xFF0090CC, 0xFF69B030, 0xFFD3EA2B, 0xFFFFFF33};
                       @Override
                       protected void onDraw(Canvas canvas) {
                           float cx = getWidth() / 2f, cy = getHeight() / 2f;
-                          float st = dpToPx(4);
+                          float R = cx * 0.84f;            // outer radius of the ring
+                          float st = R * 0.36f;            // thickness of the ring
+                          float rm = R - st / 2f;          // middle radius
+                          RectF oval = new RectF(cx - rm, cy - rm, cx + rm, cy + rm);
                           paint.setStyle(Paint.Style.STROKE);
-                          paint.setStrokeWidth(st);
-                          paint.setShader(new SweepGradient(cx, cy,
-                                  new int[]{0xFF3D7BF7, 0xFFA78BFA, 0xFFFF6B9D, 0xFFFF9F43, 0xFF3D7BF7}, null));
-                          canvas.drawCircle(cx, cy, cx - st, paint);
+                          paint.setStrokeCap(Paint.Cap.BUTT);
                           paint.setShader(null);
-                          paint.setStrokeWidth(st / 3f);
-                          paint.setColor(0x66FFFFFF);
-                          canvas.drawCircle(cx, cy, cx - st * 2.2f, paint);
+                          // soft shadow under the ring
+                          paint.setStrokeWidth(st);
+                          paint.setColor(0x33000000);
+                          canvas.drawCircle(cx + st * 0.1f, cy + st * 0.2f, rm, paint);
+                          // the twelve colours of the colour wheel
+                          for (int i = 0; i < 12; i++) {
+                              paint.setColor(cols[i]);
+                              canvas.drawArc(oval, -105f + i * 30f, 30.5f, false, paint);
+                          }
+                          // round (tube) shading: dark outer and inner edge, bright line in the middle
+                          float e = st * 0.3f;
+                          paint.setStrokeWidth(e);
+                          paint.setColor(0x44000000);
+                          canvas.drawCircle(cx, cy, R - e / 2f, paint);
+                          paint.setColor(0x38000000);
+                          canvas.drawCircle(cx, cy, R - st + e / 2f, paint);
+                          paint.setStrokeWidth(st * 0.22f);
+                          paint.setColor(0x40FFFFFF);
+                          canvas.drawCircle(cx, cy, rm, paint);
+                          // light from the top left, shade at the bottom right
+                          paint.setStrokeWidth(st);
+                          paint.setShader(new LinearGradient(cx - R, cy - R, cx + R, cy + R,
+                                  new int[]{0x66FFFFFF, 0x00FFFFFF, 0x00000000, 0x66000000},
+                                  new float[]{0f, 0.4f, 0.6f, 1f}, Shader.TileMode.CLAMP));
+                          canvas.drawCircle(cx, cy, rm, paint);
+                          paint.setShader(null);
+                          // thin bright rim
+                          float rw = Math.max(1f, st * 0.07f);
+                          paint.setStrokeWidth(rw);
+                          paint.setColor(0x55FFFFFF);
+                          canvas.drawCircle(cx, cy, R - rw / 2f, paint);
+                          paint.setStyle(Paint.Style.FILL);
                       }
                   };
                   bubbleView.setAlpha(sp.getInt("mock_alpha", 90) / 100f);
 
                   bubbleView.setOnTouchListener(new View.OnTouchListener() {
                       int ix, iy;
-                      float tx, ty;
-                      boolean moved, longFired;
+                      float tx, ty, lastDx, lastDy;
+                      boolean moved, longFired, unlocked, gesture;
                       Runnable longRun = new Runnable() {
                           @Override
                           public void run() {
-                              if (!moved) { longFired = true; openLauncher(true); }
+                              if (!moved && !gesture) {
+                                  // held still for one second: the bubble is unlocked and can be moved
+                                  unlocked = true;
+                                  longFired = true;
+                                  try {
+                                      android.os.Vibrator vb = (android.os.Vibrator) getSystemService(VIBRATOR_SERVICE);
+                                      if (vb != null) vb.vibrate(android.os.VibrationEffect.createOneShot(30,
+                                              android.os.VibrationEffect.DEFAULT_AMPLITUDE));
+                                  } catch (Throwable e) { }
+                                  if (listRoot != null) closeList();
+                                  bubbleView.animate().scaleX(1.12f).scaleY(1.12f).setDuration(120).start();
+                              }
                           }
                       };
 
@@ -1280,6 +2004,7 @@ jobs:
                       public boolean onTouch(View v, MotionEvent ev) {
                           switch (ev.getAction()) {
                               case MotionEvent.ACTION_DOWN:
+                                  if (backAnim != null) { backAnim.cancel(); backAnim = null; }
                                   handler.removeCallbacks(collapseRunnable);
                                   bubbleView.setAlpha(sp.getInt("mock_alpha", 90) / 100f);
                                   applyPosition();
@@ -1290,17 +2015,28 @@ jobs:
                                   ty = ev.getRawY();
                                   moved = false;
                                   longFired = false;
+                                  unlocked = false;
+                                  gesture = false;
+                                  lastDx = 0;
+                                  lastDy = 0;
                                   downAt = SystemClock.uptimeMillis();
-                                  handler.postDelayed(longRun, 600);
+                                  handler.postDelayed(longRun, 1000);
                                   return true;
                               case MotionEvent.ACTION_MOVE:
                                   float dx = ev.getRawX() - tx, dy = ev.getRawY() - ty;
-                                  if (!moved && (Math.abs(dx) > dpToPx(8) || Math.abs(dy) > dpToPx(8))) {
-                                      moved = true;
+                                  lastDx = dx;
+                                  lastDy = dy;
+                                  if (!unlocked && !gesture && (Math.abs(dx) > dpToPx(8) || Math.abs(dy) > dpToPx(8))) {
+                                      // the bubble is locked: dragging it is a swipe, it does not move
+                                      gesture = true;
                                       handler.removeCallbacks(longRun);
                                       if (listRoot != null) closeList();
                                   }
-                                  if (moved) {
+                                  if (unlocked && !moved && (Math.abs(dx) > dpToPx(8) || Math.abs(dy) > dpToPx(8))) {
+                                      moved = true;
+                                      if (listRoot != null) closeList();
+                                  }
+                                  if (moved || gesture) {
                                       params.x = ix + (int) dx;
                                       params.y = iy + (int) dy;
                                       try { wm.updateViewLayout(bubbleView, params); } catch (Exception e) {}
@@ -1309,9 +2045,20 @@ jobs:
                               case MotionEvent.ACTION_UP:
                               case MotionEvent.ACTION_CANCEL:
                                   handler.removeCallbacks(longRun);
+                                  if (unlocked) bubbleView.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
                                   int sw = getResources().getDisplayMetrics().widthPixels;
                                   int sh = getResources().getDisplayMetrics().heightPixels;
-                                  if (moved) {
+                                  if (gesture && !moved) {
+                                      // the bubble glides back at once; the app starts only when it is home (opening the launcher
+                                      // on the main thread would freeze the glide for a moment)
+                                      final float sdx = lastDx, sdy = lastDy;
+                                      boolean fire = ev.getAction() == MotionEvent.ACTION_UP
+                                              && Math.max(Math.abs(sdx), Math.abs(sdy)) > dpToPx(28);
+                                      springBack(ix, iy, fire ? new Runnable() {
+                                          @Override
+                                          public void run() { runSwipe(sdx, sdy); }
+                                      } : null);
+                                  } else if (moved) {
                                       int px = (int) (params.x * 100f / Math.max(1, sw - params.width));
                                       int py = (int) (params.y * 100f / Math.max(1, sh - params.height));
                                       px = Math.max(0, Math.min(100, px));
@@ -1389,7 +2136,7 @@ jobs:
           public class MainActivity extends Activity {
               static final int HOME = 0, SETTINGS = 1, BG = 2, BEHAVIOR = 3, LANG = 4, PICKER = 5,
                       DOCK = 6, ICON = 8, MOCK = 9, FOLDER = 10, BACKUP = 11, RESTORE = 12,
-                      FONT = 13, FGRP = 14, FPICK = 15, DOCKBG = 16, HPAGE = 17, HFBG = 18, MBG = 19, TBG = 20, TBAR = 21, MBOX = 22, SBOX = 23, ACTS = 24, BUB = 25, BLBG = 26;
+                      FONT = 13, FGRP = 14, FPICK = 15, DOCKBG = 16, HPAGE = 17, HFBG = 18, MBG = 19, TBG = 20, TBAR = 21, MBOX = 22, SBOX = 23, ACTS = 24, BUB = 25, BLBG = 26, SWL = 27, AIL = 28;
               static final int DLG = 0xFFEEEEEE;
               static final int REQ_IMG = 77, REQ_FIMG = 78, REQ_MIMG = 79, REQ_TIMG = 80;
 
@@ -1816,6 +2563,10 @@ jobs:
                       mockFromBubble = true;
                       in.removeExtra("open_mock_settings");
                   }
+                  if (in != null && in.getBooleanExtra("open_acts", false)) {
+                      page = ACTS;
+                      in.removeExtra("open_acts");
+                  }
               }
 
               void closeMockFromBubble() {
@@ -1838,7 +2589,6 @@ jobs:
                   MockBubbleService.launcherVisible = true;
                   MockBubbleService.refresh();
                   requestTile();
-                  finishPendingAct();
               }
 
               @Override
@@ -1892,7 +2642,7 @@ jobs:
                   } else if (page == ICON) {
                       page = HPAGE;
                       show();
-                  } else if (page == ACTS || page == BLBG) {
+                  } else if (page == ACTS || page == BLBG || page == SWL || page == AIL) {
                       page = BUB;
                       show();
                   } else if (page == BUB) {
@@ -3244,6 +3994,8 @@ jobs:
                   else if (page == PICKER) v = pickerPage(fg);
                   else if (page == MOCK) v = mockPage(fg);
                   else if (page == ACTS) v = actsPage(fg);
+                  else if (page == SWL) v = swlPage(fg);
+                  else if (page == AIL) v = aiPage(fg);
                   else if (page == BUB) v = bubblePage(fg);
                   else if (page == BLBG) v = bgPageG(6, fg);
                   else if (page == BACKUP) v = backupPage(fg);
@@ -3865,7 +4617,6 @@ jobs:
                   }));
                   return b;
               }
-
               // the cancel button shows while items are selected and the finger is up
               void updateSel() {
                   if (cancelBtn == null) return;
@@ -4583,6 +5334,7 @@ jobs:
                   int rows, topPad, botPad;
 
                   int content;
+                  final Map<View, Integer> origIcon = new HashMap<>();
 
                   GridPage(Context c, LinearLayout rb, int rows, int topPad, int botPad, int content) {
                       super(c);
@@ -4605,6 +5357,25 @@ jobs:
                       if (g >= 0) { ch = content + g; off = g / 2; }
                       else { ch = Math.max(dp(16), avail / Math.max(1, rows)); off = 0; }
                       rowsBox.setPadding(0, topPad + off, 0, 0);
+                      // rows too tight for icon + name: the app icons shrink just enough, so the names are never cut off
+                      int over = g < 0 ? Math.max(0, content - ch) : 0;
+                      for (int r = 0; r < rowsBox.getChildCount(); r++) {
+                          ViewGroup rw = (ViewGroup) rowsBox.getChildAt(r);
+                          for (int k = 0; k < rw.getChildCount(); k++) {
+                              View cv = rw.getChildAt(k);
+                              if (!(cv instanceof FrameLayout) || ((FrameLayout) cv).getChildCount() == 0) continue;
+                              View inner = ((FrameLayout) cv).getChildAt(0);
+                              if (!(inner instanceof LinearLayout) || ((LinearLayout) inner).getChildCount() < 2) continue;
+                              View ic = ((LinearLayout) inner).getChildAt(0);
+                              if (!(ic instanceof ImageView)) continue;
+                              ViewGroup.LayoutParams ilp = ic.getLayoutParams();
+                              if (ilp == null) continue;
+                              Integer o0 = origIcon.get(ic);
+                              if (o0 == null) { o0 = ilp.height; origIcon.put(ic, o0); }
+                              int ns = over > 0 ? Math.max(dp(18), o0 - over) : o0;
+                              if (ilp.height != ns) { ilp.width = ns; ilp.height = ns; ic.setLayoutParams(ilp); }
+                          }
+                      }
                       for (int r = 0; r < rowsBox.getChildCount(); r++) {
                           ViewGroup row = (ViewGroup) rowsBox.getChildAt(r);
                           for (int k = 0; k < row.getChildCount(); k++) {
@@ -4798,9 +5569,9 @@ jobs:
                   int contentH = Math.max(iconPx, folderPx) + dp(8)
                           + (hide ? 0 : dp(4) + (int) (Math.max(ts, fts) * dm.scaledDensity * 1.25f));
                   int edgeGap = Math.max(0, cellH - contentH) / 2;
-                  int firstTop = edgeGap + rowGapPx;
+                  // however small the spacing gets, the first row stops at the top edge of the frame (never behind it)
+                  int firstTop = Math.max(0, edgeGap + rowGapPx);
                   int firstNeg = 0;
-                  if (firstTop < 0) { firstNeg = firstTop; firstTop = 0; }
                   rowsBox.setPadding(0, firstTop + (fadeTop ? dres + fadeLen : 0), 0, Math.max(0, edgeGap + rowGapPx) + (fadeTop ? 0 : dres));
                   rowsBox.setClipChildren(false);
                   col.setClipChildren(false);
@@ -5485,17 +6256,12 @@ jobs:
                   wrap.addView(scrim, new FrameLayout.LayoutParams(-1, -1));
                   final LinearLayout m = new LinearLayout(this);
                   m.setOrientation(LinearLayout.VERTICAL);
-                  m.setPadding(dp(12), dp(10), dp(16), dp(10));
-                  GradientDrawable g = new GradientDrawable();
-                  g.setCornerRadius(dp(22));
-                  g.setColor(0xF5222228);
-                  g.setStroke(dp(1), 0x33888888);
-                  m.setBackground(g);
-                  m.addView(menuRow(0xFF3D7BF7, "+", t("افزودن برنامه", "Add app"), fg, w -> {
+                  // two separate main boxes, one under the other (they follow every main-box setting: color, glass ...)
+                  m.addView(row(0xFF3D7BF7, "+", t("افزودن برنامه", "Add app"), null, 0, fg, w -> {
                       plusOpen = false;
                       openPicker(null);
                   }));
-                  m.addView(menuRow(0xFFFB8C00, "📁", t("افزودن پوشه", "Add folder"), fg, w -> {
+                  m.addView(row(0xFFFB8C00, "📁", t("افزودن پوشه", "Add folder"), null, 0, fg, w -> {
                       plusOpen = false;
                       addFolderDialog(new ArrayList<String>());
                   }));
@@ -5508,7 +6274,7 @@ jobs:
                   m.setScaleX(0.1f);
                   m.setScaleY(0.1f);
                   m.post(() -> {
-                      m.setPivotX(m.getWidth() - dp(16));
+                      m.setPivotX(m.getWidth() - dp(24));
                       m.setPivotY(-dp(24));
                       m.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(240)
                               .setInterpolator(new DecelerateInterpolator()).start();
@@ -6857,10 +7623,53 @@ jobs:
                       sp.edit().putBoolean("bub_act_on", !bubAct).apply();
                       show();
                   }));
+                  r.addView(swipeGroup(fg));
+                  if (bubAct) {
+                      // how the action list opens: a list of effects (lighter boxes) and its speed
+                      final int fx = sp.getInt("bub_fx", 6);
+                      final String[] fxNames = {
+                              t("بدون افکت", "No effect"), t("قطره‌ای (کش‌دار)", "Drop (stretchy)"), t("محو شدن", "Fade"),
+                              t("کشویی", "Slide from the side"), t("بزرگ شدن از حباب", "Grow from the bubble"),
+                              t("کشویی از بالا", "Slide from the top")};
+                      final int[] fxIds = {0, 6, 1, 2, 3, 5};
+                      final int[] fxDots = {0xFF9E9E9E, 0xFF29B6F6, 0xFF42A5F5, 0xFF26A69A, 0xFFFF7043, 0xFF66BB6A};
+                      r.addView(accordionGroupFaded(0xFF26A69A, "🎞", t("افکت", "Effect"), fg, 0.6f, () -> {
+                          View[] its = new View[fxNames.length];
+                          for (int i = 0; i < its.length; i++) {
+                              final int k = i;
+                              its[i] = row(fxDots[i], "✦", fxNames[i], null, fx == fxIds[i] ? 1 : 0, fg, v -> {
+                                  sp.edit().putInt("bub_fx", fxIds[k]).apply();
+                                  show();
+                              });
+                          }
+                          return its;
+                      }));
+                      r.addView(accordionRow(0xFFFFB300, "⏱", t("سرعت افکت", "Effect speed"), "bub_fxms", 100, 1500, 300, " ms", fg, null));
+                  }
                   r.addView(row(0xFF8E24AA, "📝", t("ثبت عملکردها", "Record actions"),
                           BubbleActs.count(BubbleActs.load(sp)) + " / " + BubbleActs.MAX,
                           0, fg, v -> {
                       page = ACTS;
+                      show();
+                  }));
+                  // icon and name of every action in the list: at least one of them is always on
+                  final boolean icoOn = sp.getBoolean("bub_ico", false);
+                  final boolean nmOn = sp.getBoolean("bub_nm", true);
+                  r.addView(row(0xFF42A5F5, "🖼", t("آیکون عملکرد", "Action icon"),
+                          t("آیکون برنامه کنار هر عملکرد در لیست", "The app icon next to every action in the list"),
+                          icoOn ? 3 : 2, fg, v -> {
+                      SharedPreferences.Editor ed = sp.edit().putBoolean("bub_ico", !icoOn);
+                      if (icoOn && !nmOn) ed.putBoolean("bub_nm", true);
+                      ed.apply();
+                      show();
+                  }));
+                  r.addView(accordionRow(0xFF26C6DA, "📏", t("سایز آیکون عملکرد", "Action icon size"), "bub_isz", 5, 32, 20, " dp", fg, null));
+                  r.addView(row(0xFFFFA726, "🔤", t("اسم عملکرد", "Action name"),
+                          t("نام هر عملکرد سمت راست آیکون آن", "The name of every action to the right of its icon"),
+                          nmOn || !icoOn ? 3 : 2, fg, v -> {
+                      SharedPreferences.Editor ed = sp.edit().putBoolean("bub_nm", !nmOn);
+                      if (nmOn && !icoOn) ed.putBoolean("bub_ico", true);
+                      ed.apply();
                       show();
                   }));
                   // every app of the list in its own box, stacked, with a gap between them
@@ -6869,6 +7678,8 @@ jobs:
                           t("هر برنامه در کادر جداگانه زیر هم؛ عرض و ارتفاع لیست اندازه همه کادرها را هم‌زمان تغییر می‌دهد",
                                   "Every app in its own box, stacked; list width and height resize all the boxes together"),
                           "bub_sep", false, fg, () -> show()));
+                  // how many boxes are visible at once (the others scroll in)
+                  r.addView(accordionRow(0xFF5C6BC0, "🔢", t("تعداد کادرها", "Number of boxes"), "bub_cnt", 2, 20, 20, "", fg, null));
                   // look of the list (even fainter boxes inside)
                   r.addView(accordionGroupFaded(0xFF5E35B1, "🎨", t("پس‌زمینه لیست عملکرد", "Action list background"), fg, 0.4f, () -> {
                       List<View> l = new ArrayList<>();
@@ -6898,8 +7709,8 @@ jobs:
                   LinearLayout r = vbox();
                   r.addView(topBar(t("عملکردهای حباب", "Bubble actions"), fg));
                   TextView hint = new TextView(this);
-                  hint.setText(t("هر جایگاه یک عملکرد از یک برنامه است. اگر برنامه میان‌بر (Shortcut) داشته باشد از لیست آن انتخاب می‌کنید؛ در غیر این صورت برنامه باز می‌شود و آخرین صفحه‌ای که در آن بودید ثبت می‌شود. در حباب، زدن روی نام برنامه آخرین عملکرد آن را اجرا می‌کند و زدن دوباره، همان عملکرد را دوباره اجرا می‌کند. نگه داشتن روی نام برنامه، انتخاب بین عملکردهای آن را نشان می‌دهد.",
-                          "Each slot is one action of one app. If the app has shortcuts you pick one from its list; otherwise the app opens and the last screen you were in is saved. In the bubble, tapping an app name runs its last action and tapping again runs it again. Long-press an app name to choose between its actions."));
+                  hint.setText(t("هر جایگاه یک عملکرد است: برنامه را انتخاب می‌کنید، یک نام دلخواه می‌دهید و نوع اجرا را برمی‌گزینید (پاپ آپ، کامل، ضبط روش داخل برنامه یا کاشی تنظیمات سریع). در لیست حباب با همان نام دلخواه دیده می‌شود. با ضبط روش، برنامه باز می‌شود و کلیک‌های شما ذخیره می‌شود؛ با زدن روی نام، همان کلیک‌ها دوباره اجرا می‌شود.",
+                          "Each slot is one action: pick an app, give it a custom name and choose how it runs (popup, full, record a way inside the app, or a Quick Settings tile). It shows in the bubble list with that name. When recording, the app opens and your taps are saved; tapping the name plays the same taps again."));
                   hint.setTextSize(12);
                   hint.setTextColor(fg);
                   hint.setAlpha(0.65f);
@@ -6915,15 +7726,43 @@ jobs:
                           r.addView(row(0xFF9E9E9E, "+", (i + 1) + ". " + t("ثبت عملکرد", "Record action"),
                                   null, 0, fg, v -> actSlotClick(slot)));
                       } else {
-                          boolean cur = BubbleActs.current(acts, a.pkg) == a;
                           String sub = (a.label == null || a.label.isEmpty() ? a.type : a.label)
-                                  + (cur ? "   ★ " + t("آخرین عملکرد", "last action") : "");
-                          r.addView(row(0xFF26A69A, "✓", (i + 1) + ". " + BubbleActs.appLabel(this, a.pkg),
+                                  + "  •  " + BubbleActs.appLabel(this, a.pkg);
+                          r.addView(row(0xFF26A69A, "✓", (i + 1) + ". " + BubbleActs.title(this, a),
                                   sub, 0, fg, v -> actSlotClick(slot)));
                       }
                   }
+                  // hold one second on an action to pick it up; the others slide aside, it sits where it is let go
+                  final List<View> rows = new ArrayList<>();
+                  boolean[] cm = new boolean[BubbleActs.MAX];
+                  for (int i = 0; i < BubbleActs.MAX; i++) {
+                      rows.add(r.getChildAt(r.getChildCount() - BubbleActs.MAX + i));
+                      cm[i] = acts[i] != null;
+                  }
+                  attachReorder(rows, cm, (from, to) -> moveAct(from, to));
                   boxFade = oldFade;
-                  return wrapScroll(r);
+                  return wrapScrollKeep(r);
+              }
+
+              // moves an action from one slot to another; the ones in between shift by one place
+              void moveAct(int f, int to) {
+                  BubbleActs.Act[] a = BubbleActs.load(sp);
+                  boolean[] on = new boolean[BubbleActs.MAX];
+                  for (int i = 0; i < BubbleActs.MAX; i++) on[i] = sp.getBoolean("bub_on_s" + i, false);
+                  BubbleActs.Act x = a[f];
+                  boolean xo = on[f];
+                  if (f < to) {
+                      for (int k = f; k < to; k++) { a[k] = a[k + 1]; on[k] = on[k + 1]; }
+                  } else {
+                      for (int k = f; k > to; k--) { a[k] = a[k - 1]; on[k] = on[k - 1]; }
+                  }
+                  a[to] = x;
+                  on[to] = xo;
+                  BubbleActs.save(sp, a);
+                  SharedPreferences.Editor ed = sp.edit();
+                  for (int i = 0; i < BubbleActs.MAX; i++) ed.putBoolean("bub_on_s" + i, on[i]);
+                  ed.apply();
+                  show();
               }
 
               void actSlotClick(final int slot) {
@@ -6934,24 +7773,442 @@ jobs:
                       return;
                   }
                   CharSequence[] items = {
-                          t("انتخاب به‌عنوان آخرین عملکرد این برنامه", "Use as this app's last action"),
                           t("تغییر عملکرد", "Change action"),
+                          t("تغییر نام", "Rename"),
                           t("حذف", "Delete")};
-                  new AlertDialog.Builder(this).setTitle((slot + 1) + ". " + BubbleActs.appLabel(this, a.pkg))
+                  new AlertDialog.Builder(this).setTitle((slot + 1) + ". " + BubbleActs.title(this, a))
                           .setItems(items, (d, w) -> {
                               if (w == 0) {
-                                  a.ts = System.currentTimeMillis();
-                                  BubbleActs.save(sp, acts);
-                                  show();
-                              } else if (w == 1) {
                                   actPickApp(slot);
+                              } else if (w == 1) {
+                                  actAskName(slot, a.pkg, BubbleActs.appLabel(this, a.pkg), BubbleActs.title(this, a), true);
                               } else {
                                   acts[slot] = null;
                                   BubbleActs.save(sp, acts);
-                                  if (!BubbleActs.pkgs(acts).contains(a.pkg)) sp.edit().remove("bub_on_" + a.pkg).apply();
+                                  sp.edit().remove("bub_on_s" + slot).apply();
                                   show();
                               }
                           }).setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              // ---------- holding a row for one second to move it ----------
+              interface Mv { void go(int from, int to); }
+
+              int keepScrollY = -1;
+
+              // a settings page that comes back at the same scroll place after a move
+              ScrollView wrapScrollKeep(View content) {
+                  final ScrollView sv = wrapScroll(content);
+                  if (keepScrollY >= 0) {
+                      final int y = keepScrollY;
+                      keepScrollY = -1;
+                      sv.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                          @Override
+                          public boolean onPreDraw() {
+                              sv.getViewTreeObserver().removeOnPreDrawListener(this);
+                              sv.scrollTo(0, y);
+                              return true;
+                          }
+                      });
+                  }
+                  return sv;
+              }
+
+              void attachReorder(List<View> rows, boolean[] canMove, Mv mv) {
+                  for (int i = 0; i < rows.size(); i++) {
+                      if (canMove[i]) rows.get(i).setOnTouchListener(new Reorder(rows, i, mv));
+                  }
+              }
+
+              class Reorder implements View.OnTouchListener {
+                  final List<View> rows;
+                  final int idx;
+                  final Mv mv;
+                  boolean drag;
+                  float downX, downY, lastY, grab;
+                  int cur;
+                  int[] tops, hs;
+                  ScrollView sv;
+                  final Runnable hold = new Runnable() {
+                      @Override
+                      public void run() { begin(); }
+                  };
+                  final Runnable scroller = new Runnable() {
+                      @Override
+                      public void run() {
+                          if (!drag || sv == null) return;
+                          int[] sl = new int[2];
+                          sv.getLocationOnScreen(sl);
+                          float y = lastY - sl[1];
+                          int step = 0;
+                          if (y < dp(90)) step = -dp(10);
+                          else if (y > sv.getHeight() - dp(90)) step = dp(10);
+                          if (step != 0) {
+                              int before = sv.getScrollY();
+                              sv.scrollBy(0, step);
+                              if (sv.getScrollY() != before) update();
+                          }
+                          sv.postDelayed(this, 16);
+                      }
+                  };
+
+                  Reorder(List<View> rows, int idx, Mv mv) {
+                      this.rows = rows;
+                      this.idx = idx;
+                      this.mv = mv;
+                  }
+
+                  float pitch(int k) { return k + 1 < tops.length ? tops[k + 1] - tops[k] : hs[k] + dp(10); }
+
+                  void begin() {
+                      View v = rows.get(idx);
+                      drag = true;
+                      try { v.getParent().requestDisallowInterceptTouchEvent(true); } catch (Throwable e) { }
+                      v.setPressed(false);
+                      v.cancelLongPress();
+                      v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                      int n = rows.size();
+                      tops = new int[n];
+                      hs = new int[n];
+                      for (int k = 0; k < n; k++) {
+                          tops[k] = rows.get(k).getTop();
+                          hs[k] = rows.get(k).getHeight();
+                      }
+                      cur = idx;
+                      ViewParent p = v.getParent();
+                      while (p != null && !(p instanceof ScrollView)) p = p.getParent();
+                      sv = (ScrollView) p;
+                      int[] pl = new int[2];
+                      ((View) v.getParent()).getLocationOnScreen(pl);
+                      grab = (lastY - pl[1]) - tops[idx];
+                      v.setScaleX(1.03f);
+                      v.setScaleY(1.03f);
+                      v.setTranslationZ(dp(10));
+                      v.setAlpha(0.92f);
+                      if (sv != null) sv.post(scroller);
+                  }
+
+                  void update() {
+                      View v = rows.get(idx);
+                      int[] pl = new int[2];
+                      ((View) v.getParent()).getLocationOnScreen(pl);
+                      float ty = (lastY - pl[1]) - grab - tops[idx];
+                      v.setTranslationY(ty);
+                      float center = tops[idx] + ty + hs[idx] / 2f;
+                      int to = rows.size() - 1;
+                      for (int k = 0; k < rows.size(); k++) {
+                          if (center < tops[k] + hs[k]) { to = k; break; }
+                      }
+                      if (to != cur) {
+                          cur = to;
+                          float foot = pitch(idx);
+                          for (int k = 0; k < rows.size(); k++) {
+                              if (k == idx) continue;
+                              float off = 0;
+                              if (idx < cur && k > idx && k <= cur) off = -foot;
+                              else if (idx > cur && k >= cur && k < idx) off = foot;
+                              rows.get(k).animate().translationY(off).setDuration(140).start();
+                          }
+                      }
+                  }
+
+                  void finish(boolean ok) {
+                      drag = false;
+                      final View v = rows.get(idx);
+                      if (sv != null) sv.removeCallbacks(scroller);
+                      final int from = idx, to = cur;
+                      if (ok && to != from) {
+                          float fin = tops[to] - tops[from];
+                          if (from < to) fin += pitch(to) - pitch(from);
+                          v.animate().translationY(fin).setDuration(120).withEndAction(() -> {
+                              keepScrollY = sv != null ? sv.getScrollY() : -1;
+                              mv.go(from, to);
+                          }).start();
+                      } else {
+                          v.animate().translationY(0).scaleX(1f).scaleY(1f).alpha(1f).translationZ(0).setDuration(140).start();
+                          for (View o : rows) if (o != v) o.animate().translationY(0).setDuration(140).start();
+                          v.setPressed(false);
+                      }
+                  }
+
+                  @Override
+                  public boolean onTouch(View v, MotionEvent ev) {
+                      switch (ev.getActionMasked()) {
+                          case MotionEvent.ACTION_DOWN:
+                              drag = false;
+                              downX = ev.getRawX();
+                              downY = ev.getRawY();
+                              lastY = downY;
+                              v.postDelayed(hold, 1000);
+                              return false;
+                          case MotionEvent.ACTION_MOVE:
+                              lastY = ev.getRawY();
+                              if (drag) { update(); return true; }
+                              if (Math.abs(ev.getRawX() - downX) > dp(10) || Math.abs(ev.getRawY() - downY) > dp(10)) v.removeCallbacks(hold);
+                              return false;
+                          case MotionEvent.ACTION_UP:
+                          case MotionEvent.ACTION_CANCEL:
+                              v.removeCallbacks(hold);
+                              if (drag) {
+                                  finish(ev.getActionMasked() == MotionEvent.ACTION_UP);
+                                  return true;
+                              }
+                              return false;
+                      }
+                      return false;
+                  }
+              }
+
+              // ---------- bubble moves: left, down and right (up always opens VadLan) ----------
+              String swDir = "left";
+
+              static final int[] AI_DOT = {0xFF4285F4, 0xFF10A37F, 0xFFD97757, 0xFF5C6BC0, 0xFF26A69A, 0xFFAB47BC, 0xFF34A853, 0xFF43A047, 0xFF00897B};
+              static final String[] AI_SYM = {"✦", "◎", "✺", "🎙", "🎥", "🖥", "文", "🎤", "📷"};
+
+              boolean faNow() { return sp.getString("lang", "fa").equals("fa"); }
+
+              String swArrow(String d) { return d.equals("left") ? "←" : d.equals("down") ? "↓" : "→"; }
+
+              String swDirName(String d) {
+                  return d.equals("left") ? t("چپ", "Left") : d.equals("down") ? t("پایین", "Down") : t("راست", "Right");
+              }
+
+              // what a move does, in a few words
+              String swSummary(String d) {
+                  if (sp.getBoolean("swai_" + d, false)) return t("هوش مصنوعی", "AI");
+                  if ("list".equals(sp.getString("swm_" + d, ""))) {
+                      int n = BubbleActs.swList(sp, d).size();
+                      if (n > 0) return t("لیست برنامه‌ها", "App list") + " (" + n + ")";
+                  }
+                  String pkg = sp.getString("swipe_" + d, "");
+                  if (pkg != null && !pkg.isEmpty() && installed(pkg)) return label(pkg);
+                  return swDirName(d);
+              }
+
+              // bubble moves: three boxes (left, down, right); each one opens the choices of what the move does
+              View swipeGroup(final int fg) {
+                  return accordionGroupFaded(0xFF00ACC1, "↕", t("حرکات حباب", "Bubble moves"), fg, 0.6f, () -> {
+                      String[] dirs = {"left", "down", "right"};
+                      int[] dots = {0xFF26A69A, 0xFFFF7043, 0xFFAB47BC};
+                      View[] its = new View[3];
+                      for (int i = 0; i < 3; i++) {
+                          final String d = dirs[i];
+                          its[i] = row(dots[i], swArrow(d), swSummary(d), null, 0, fg, v -> swipeMenu(d));
+                      }
+                      return its;
+                  });
+              }
+
+              void swipeMenu(final String d) {
+                  final boolean ai = sp.getBoolean("swai_" + d, false);
+                  final List<CharSequence> items = new ArrayList<>();
+                  items.add(t("📱 انتخاب برنامه", "📱 Choose an app"));
+                  items.add("➕ " + t("لیست برنامه‌ها", "App list") + " (" + BubbleActs.swList(sp, d).size() + " / " + BubbleActs.SW_MAX + ")");
+                  items.add((ai ? "☑ " : "☐ ") + t("هوش مصنوعی", "AI"));
+                  if (ai) items.add(t("⚙ ویرایش لیست هوش مصنوعی", "⚙ Edit the AI list"));
+                  items.add(t("🗑 بدون عملکرد", "🗑 No action"));
+                  new AlertDialog.Builder(this).setTitle(swArrow(d) + "  " + swDirName(d))
+                          .setItems(items.toArray(new CharSequence[0]), (dlg, w) -> {
+                              if (w == 0) {
+                                  pickSwipeApp(d);
+                              } else if (w == 1) {
+                                  sp.edit().putString("swm_" + d, "list").putBoolean("swai_" + d, false).apply();
+                                  swDir = d;
+                                  page = SWL;
+                                  show();
+                              } else if (w == 2) {
+                                  if (ai) {
+                                      sp.edit().putBoolean("swai_" + d, false).apply();
+                                      show();
+                                  } else {
+                                      sp.edit().putBoolean("swai_" + d, true).apply();
+                                      swDir = d;
+                                      page = AIL;
+                                      show();
+                                  }
+                              } else if (ai && w == 3) {
+                                  swDir = d;
+                                  page = AIL;
+                                  show();
+                              } else {
+                                  sp.edit().putBoolean("swai_" + d, false).remove("swipe_" + d).remove("swm_" + d).remove("swl_" + d).apply();
+                                  show();
+                              }
+                          })
+                          .setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              // one app for this move: pick it, then choose popup or full
+              void pickSwipeApp(final String d) {
+                  chooseApp(pkg -> chooseWin(win -> {
+                      sp.edit().putString("swipe_" + d, pkg).putString("swipe_" + d + "_w", win)
+                              .putString("swm_" + d, "app").putBoolean("swai_" + d, false).apply();
+                      show();
+                  }));
+              }
+
+              void chooseApp(final Consumer<String> cb) {
+                  PackageManager pm = getPackageManager();
+                  Intent q = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
+                  Set<String> seen = new HashSet<>();
+                  final List<String[]> l = new ArrayList<>();
+                  for (ResolveInfo ri : pm.queryIntentActivities(q, 0)) {
+                      String p = ri.activityInfo.packageName;
+                      if (p.equals(getPackageName()) || !seen.add(p)) continue;
+                      l.add(new String[]{ri.loadLabel(pm).toString(), p});
+                  }
+                  Collections.sort(l, (x, y) -> x[0].compareToIgnoreCase(y[0]));
+                  CharSequence[] names = new CharSequence[l.size()];
+                  for (int i = 0; i < names.length; i++) names[i] = l.get(i)[0];
+                  new AlertDialog.Builder(this).setTitle(t("انتخاب برنامه", "Choose app"))
+                          .setItems(names, (dlg, w) -> cb.accept(l.get(w)[1]))
+                          .setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              void chooseWin(final Consumer<String> cb) {
+                  CharSequence[] items = {
+                          t("🗗 باز شدن در پاپ آپ", "🗗 Open in a popup"),
+                          t("⛶ باز شدن کامل", "⛶ Open full")};
+                  new AlertDialog.Builder(this).setTitle(t("نوع باز شدن", "How it opens"))
+                          .setItems(items, (dlg, w) -> cb.accept(w == 0 ? "popup" : "full"))
+                          .setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              String winText(String w) {
+                  return "popup".equals(w) ? t("باز شدن در پاپ آپ", "Open in popup") : t("باز شدن کامل", "Open full");
+              }
+
+              TextView pageHint(int fg, String s) {
+                  TextView hint = new TextView(this);
+                  hint.setText(s);
+                  hint.setTextSize(12);
+                  hint.setTextColor(fg);
+                  hint.setAlpha(0.65f);
+                  hint.setPadding(dp(4), dp(10), dp(4), 0);
+                  return hint;
+              }
+
+              // the apps of one move: a "+" adds an app, a one second hold moves one up or down
+              View swlPage(final int fg) {
+                  final String d = swDir;
+                  LinearLayout r = vbox();
+                  r.addView(topBar(swArrow(d) + "  " + t("لیست برنامه‌ها", "App list"), fg));
+                  r.addView(pageHint(fg, t("وقتی حباب را به این سمت می‌کشید، این برنامه‌ها در لیستی مثل لیست عملکرد باز می‌شوند. برای جابه‌جایی، یک ثانیه روی برنامه نگه دارید و به بالا یا پایین ببرید.",
+                          "Dragging the bubble this way opens these apps in a list like the action list. To move one, hold it for one second and slide it up or down.")));
+                  final float oldFade = boxFade;
+                  boxFade = 0.6f;
+                  final List<String[]> l = BubbleActs.swList(sp, d);
+                  final List<View> rows = new ArrayList<>();
+                  for (int i = 0; i < l.size(); i++) {
+                      final int k = i;
+                      String[] e = l.get(i);
+                      View rv = row(0xFF26A69A, "✓", (i + 1) + ". " + (installed(e[0]) ? label(e[0]) : e[0]),
+                              winText(e[1]), 0, fg, v -> swItemClick(d, k));
+                      r.addView(rv);
+                      rows.add(rv);
+                  }
+                  if (l.size() < BubbleActs.SW_MAX) {
+                      r.addView(row(0xFF9E9E9E, "+", t("افزودن برنامه", "Add app"), l.size() + " / " + BubbleActs.SW_MAX, 0, fg,
+                              v -> chooseApp(pkg -> chooseWin(win -> {
+                                  List<String[]> n2 = BubbleActs.swList(sp, d);
+                                  n2.add(new String[]{pkg, win});
+                                  BubbleActs.swSave(sp, d, n2);
+                                  sp.edit().putString("swm_" + d, "list").putBoolean("swai_" + d, false).apply();
+                                  show();
+                              }))));
+                  }
+                  boxFade = oldFade;
+                  boolean[] cm = new boolean[rows.size()];
+                  Arrays.fill(cm, true);
+                  attachReorder(rows, cm, (from, to) -> {
+                      List<String[]> n2 = BubbleActs.swList(sp, d);
+                      if (from >= n2.size() || to >= n2.size()) return;
+                      String[] x = n2.remove(from);
+                      n2.add(to, x);
+                      BubbleActs.swSave(sp, d, n2);
+                      show();
+                  });
+                  return wrapScrollKeep(r);
+              }
+
+              void swItemClick(final String d, final int k) {
+                  List<String[]> l0 = BubbleActs.swList(sp, d);
+                  if (k >= l0.size()) return;
+                  CharSequence[] items = {
+                          t("🗗 باز شدن در پاپ آپ", "🗗 Open in a popup"),
+                          t("⛶ باز شدن کامل", "⛶ Open full"),
+                          t("🔄 تغییر برنامه", "🔄 Change app"),
+                          t("حذف", "Delete")};
+                  String nm = installed(l0.get(k)[0]) ? label(l0.get(k)[0]) : l0.get(k)[0];
+                  new AlertDialog.Builder(this).setTitle(nm).setItems(items, (dlg, w) -> {
+                      List<String[]> n2 = BubbleActs.swList(sp, d);
+                      if (k >= n2.size()) return;
+                      if (w == 0 || w == 1) {
+                          n2.get(k)[1] = w == 0 ? "popup" : "full";
+                          BubbleActs.swSave(sp, d, n2);
+                          show();
+                      } else if (w == 2) {
+                          chooseApp(pkg -> {
+                              List<String[]> n3 = BubbleActs.swList(sp, d);
+                              if (k >= n3.size()) return;
+                              n3.get(k)[0] = pkg;
+                              BubbleActs.swSave(sp, d, n3);
+                              show();
+                          });
+                      } else {
+                          n2.remove(k);
+                          BubbleActs.swSave(sp, d, n2);
+                          show();
+                      }
+                  }).setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              // the AI actions of one move: a tap chooses popup or full, a one second hold moves one up or down
+              View aiPage(final int fg) {
+                  final String d = swDir;
+                  final boolean fa = faNow();
+                  LinearLayout r = vbox();
+                  r.addView(topBar(swArrow(d) + "  " + t("هوش مصنوعی", "AI"), fg));
+                  r.addView(pageHint(fg, t("وقتی حباب را به این سمت می‌کشید، این عملکردها در لیستی مثل لیست عملکرد باز می‌شوند. با زدن روی هر کدام، باز شدن کامل یا پاپ آپ را برایش تعیین کنید. برای جابه‌جایی، یک ثانیه نگه دارید و به بالا یا پایین ببرید.",
+                          "Dragging the bubble this way opens these actions in a list like the action list. Tap one to choose popup or full for it. To move one, hold it for one second and slide it up or down.")));
+                  final float oldFade = boxFade;
+                  boxFade = 0.6f;
+                  final int[] ord = BubbleActs.aiOrder(sp, d);
+                  final List<View> rows = new ArrayList<>();
+                  for (int i = 0; i < ord.length; i++) {
+                      final int id = ord[i];
+                      View rv = row(AI_DOT[id], AI_SYM[id], BubbleActs.aiName(fa, id),
+                              winText(BubbleActs.aiWin(sp, d, id)), 0, fg, v -> aiItemClick(d, id));
+                      r.addView(rv);
+                      rows.add(rv);
+                  }
+                  boxFade = oldFade;
+                  boolean[] cm = new boolean[rows.size()];
+                  Arrays.fill(cm, true);
+                  attachReorder(rows, cm, (from, to) -> {
+                      int[] o = BubbleActs.aiOrder(sp, d);
+                      int x = o[from];
+                      if (from < to) {
+                          for (int k = from; k < to; k++) o[k] = o[k + 1];
+                      } else {
+                          for (int k = from; k > to; k--) o[k] = o[k - 1];
+                      }
+                      o[to] = x;
+                      BubbleActs.aiSaveOrder(sp, d, o);
+                      show();
+                  });
+                  return wrapScrollKeep(r);
+              }
+
+              void aiItemClick(final String d, final int id) {
+                  String cur = BubbleActs.aiWin(sp, d, id);
+                  CharSequence[] items = {
+                          ("popup".equals(cur) ? "✓ " : "") + t("🗗 باز شدن در پاپ آپ", "🗗 Open in a popup"),
+                          ("full".equals(cur) ? "✓ " : "") + t("⛶ باز شدن کامل", "⛶ Open full")};
+                  new AlertDialog.Builder(this).setTitle(BubbleActs.aiName(faNow(), id)).setItems(items, (dlg, w) -> {
+                      sp.edit().putString("swai_" + d + "_w" + id, w == 0 ? "popup" : "full").apply();
+                      show();
+                  }).setNegativeButton(t("لغو", "Cancel"), null).show();
               }
 
               // step 1: which app
@@ -6969,60 +8226,78 @@ jobs:
                   CharSequence[] names = new CharSequence[l.size()];
                   for (int i = 0; i < names.length; i++) names[i] = l.get(i)[0];
                   new AlertDialog.Builder(this).setTitle(t("انتخاب برنامه", "Choose app"))
-                          .setItems(names, (d, w) -> actPickMode(slot, l.get(w)[1], l.get(w)[0]))
+                          .setItems(names, (d, w) -> actAskName(slot, l.get(w)[1], l.get(w)[0], l.get(w)[0], false))
                           .setNegativeButton(t("لغو", "Cancel"), null).show();
               }
 
-              // step 2: make an action of the app, or just open the app itself
-              // opening the app itself: as a popup (the size of "Run apps"), or full
-              void actPickOpen(final int slot, final String pkg, final String appName) {
+              // step 2: the name this action gets in the bubble list
+              void actAskName(final int slot, final String pkg, final String appName, String initial, final boolean rename) {
+                  final EditText et = new EditText(this);
+                  et.setSingleLine(true);
+                  et.setText(initial);
+                  et.setSelection(initial.length());
+                  FrameLayout fl = new FrameLayout(this);
+                  fl.setPadding(dp(20), dp(8), dp(20), 0);
+                  fl.addView(et, new FrameLayout.LayoutParams(-1, -2));
+                  new AlertDialog.Builder(this).setTitle(t("نام عملکرد", "Action name"))
+                          .setMessage(t("این نام در لیست عملکرد حباب نمایش داده می‌شود.", "This name is shown in the bubble action list."))
+                          .setView(fl)
+                          .setPositiveButton(t("تأیید", "OK"), (d, w) -> {
+                              String nm = et.getText().toString().trim();
+                              if (nm.isEmpty()) nm = appName;
+                              if (rename) {
+                                  BubbleActs.Act[] acts = BubbleActs.load(sp);
+                                  if (acts[slot] != null) {
+                                      acts[slot].name = nm;
+                                      BubbleActs.save(sp, acts);
+                                  }
+                                  show();
+                              } else {
+                                  actMenu(slot, pkg, nm, appName);
+                              }
+                          })
+                          .setNegativeButton(t("لغو", "Cancel"), null).show();
+              }
+
+              // step 3: how the action runs
+              void actMenu(final int slot, final String pkg, final String name, final String appName) {
                   CharSequence[] items = {
                           t("🗗 باز شدن در پاپ آپ", "🗗 Open in a popup"),
-                          t("⛶ باز شدن کامل", "⛶ Open full")};
-                  new AlertDialog.Builder(this).setTitle(appName).setItems(items, (d, w) -> {
-                      if (w == 0) actSave(slot, pkg, "app", "popup", t("باز شدن در پاپ آپ", "Open in popup"));
-                      else actSave(slot, pkg, "app", "full", t("باز شدن کامل", "Open full"));
-                  }).setNegativeButton(t("بازگشت", "Back"), (d, w) -> actPickMode(slot, pkg, appName)).show();
-              }
-
-              void actPickMode(final int slot, final String pkg, final String appName) {
-                  CharSequence[] items = {
-                          t("⚙ ایجاد عملکرد برنامه (بدون باز شدن برنامه)", "⚙ Create an app action (the app does not open)"),
-                          t("📂 باز کردن خود برنامه (بدون اجرای عملکرد)", "📂 Open the app itself (no action)")};
-                  new AlertDialog.Builder(this).setTitle(appName).setItems(items, (d, w) -> {
-                      if (w == 0) actPickKind(slot, pkg, appName);
-                      else actPickOpen(slot, pkg, appName);
+                          t("⛶ باز شدن کامل", "⛶ Open full"),
+                          t("🎬 ضبط روش داخل برنامه", "🎬 Record a way inside the app"),
+                          t("🔲 کاشی تنظیمات سریع", "🔲 Quick Settings tile")};
+                  new AlertDialog.Builder(this).setTitle(name).setItems(items, (d, w) -> {
+                      if (w == 0) actSave(slot, pkg, "app", "popup", t("باز شدن در پاپ آپ", "Open in popup"), name);
+                      else if (w == 1) actSave(slot, pkg, "app", "full", t("باز شدن کامل", "Open full"), name);
+                      else if (w == 2) actStartMacro(slot, pkg, name);
+                      else actPickTile(slot, pkg, name, appName);
                   }).setNegativeButton(t("لغو", "Cancel"), null).show();
               }
 
-              // step 3: one of the app's shortcuts, a part of the app, a quick settings tile, or save the app's last run
-              void actPickKind(final int slot, final String pkg, final String appName) {
-                  final List<ShortcutInfo> scs = BubbleActs.shortcuts(this, pkg);
-                  CharSequence[] items = new CharSequence[scs.size() + 3];
-                  for (int i = 0; i < scs.size(); i++) {
-                      CharSequence sl = scs.get(i).getShortLabel();
-                      items[i] = "⚡ " + (sl == null ? scs.get(i).getId() : sl);
+              // the app opens and everything tapped in it is recorded until "Stop recording" is pressed
+              void actStartMacro(int slot, String pkg, String name) {
+                  if (!TileClickService.ready()) {
+                      actAskA11y();
+                      return;
                   }
-                  items[scs.size()] = t("🧩 بخش‌های برنامه (Activity / Receiver / Service)", "🧩 App parts (Activity / Receiver / Service)");
-                  items[scs.size() + 1] = t("🔲 کاشی تنظیمات سریع (پنل بالای صفحه)", "🔲 Quick Settings tile");
-                  items[scs.size() + 2] = t("▶ باز کردن برنامه و ثبت آخرین اجرا", "▶ Open the app and save its last run");
-                  new AlertDialog.Builder(this).setTitle(appName).setItems(items, (d, w) -> {
-                      if (w == scs.size() + 2) {
-                          actRecordByOpening(slot, pkg);
-                      } else if (w == scs.size() + 1) {
-                          actPickTile(slot, pkg, appName);
-                      } else if (w == scs.size()) {
-                          actPickPart(slot, pkg, appName);
-                      } else {
-                          ShortcutInfo s = scs.get(w);
-                          CharSequence sl = s.getShortLabel();
-                          actSave(slot, pkg, "sc", s.getId(), sl == null ? s.getId() : sl.toString());
-                      }
-                  }).setNegativeButton(t("لغو", "Cancel"), null).show();
+                  actSave(slot, pkg, "macro", "[]", "🎬 0", name);
+                  Toast.makeText(this, t("برنامه باز شد؛ روش دلخواه را انتخاب کنید و در پایان «پایان ضبط» را بزنید",
+                          "The app opened: pick the way you want, then press \"Stop recording\""), Toast.LENGTH_LONG).show();
+                  TileClickService.record(pkg, slot);
+              }
+
+              void actAskA11y() {
+                  new AlertDialog.Builder(this).setTitle(t("دسترسی‌پذیری", "Accessibility"))
+                          .setMessage(t("برای این کار باید سرویس دسترسی‌پذیری VadLan را در تنظیمات گوشی روشن کنید.",
+                                  "Turn on the VadLan accessibility service in the phone settings first."))
+                          .setPositiveButton(t("باز کردن تنظیمات", "Open settings"), (d2, w2) -> {
+                              try { startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); } catch (Exception e) { }
+                          })
+                          .setNegativeButton(t("بعداً", "Later"), null).show();
               }
 
               // a Quick Settings tile: the name written on the tile is typed here
-              void actPickTile(final int slot, final String pkg, String appName) {
+              void actPickTile(final int slot, final String pkg, final String name, String appName) {
                   final EditText et = new EditText(this);
                   et.setSingleLine(true);
                   et.setText(appName);
@@ -7037,98 +8312,25 @@ jobs:
                           .setPositiveButton(t("ثبت", "Save"), (d, w) -> {
                               String nm = et.getText().toString().trim();
                               if (nm.isEmpty()) return;
-                              actSave(slot, pkg, "tile", nm, "🔲 " + nm);
-                              if (!TileClickService.ready()) {
-                                  new AlertDialog.Builder(this).setTitle(t("دسترسی‌پذیری", "Accessibility"))
-                                          .setMessage(t("برای کلیک روی کاشی باید سرویس دسترسی‌پذیری VadLan را در تنظیمات گوشی روشن کنید.",
-                                                  "To tap the tile, turn on the VadLan accessibility service in the phone settings."))
-                                          .setPositiveButton(t("باز کردن تنظیمات", "Open settings"), (d2, w2) -> {
-                                              try { startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); } catch (Exception e) { }
-                                          })
-                                          .setNegativeButton(t("بعداً", "Later"), null).show();
-                              }
+                              actSave(slot, pkg, "tile", nm, "🔲 " + nm, name);
+                              if (!TileClickService.ready()) actAskA11y();
                           })
                           .setNegativeButton(t("لغو", "Cancel"), null).show();
               }
 
-              // optional: a screen, receiver or service of the app that runs without opening the app itself
-              void actPickPart(final int slot, final String pkg, final String appName) {
-                  final List<String[]> parts = BubbleActs.components(this, pkg);
-                  if (parts.isEmpty()) {
-                      Toast.makeText(this, t("این برنامه بخش قابل اجرایی ندارد", "This app has no startable parts"), Toast.LENGTH_SHORT).show();
-                      actPickKind(slot, pkg, appName);
-                      return;
-                  }
-                  CharSequence[] names = new CharSequence[parts.size()];
-                  for (int i = 0; i < names.length; i++) names[i] = parts.get(i)[2];
-                  new AlertDialog.Builder(this).setTitle(appName)
-                          .setItems(names, (d, w) -> {
-                              String[] p = parts.get(w);
-                              actSave(slot, pkg, p[0], p[1], p[2]);
-                          })
-                          .setNegativeButton(t("بازگشت", "Back"), (d, w) -> actPickKind(slot, pkg, appName)).show();
-              }
-
-              void actSave(int slot, String pkg, String type, String id, String label) {
+              void actSave(int slot, String pkg, String type, String id, String label, String name) {
                   BubbleActs.Act[] acts = BubbleActs.load(sp);
                   BubbleActs.Act a = new BubbleActs.Act();
                   a.pkg = pkg;
                   a.type = type;
                   a.id = id;
                   a.label = label;
+                  a.name = name;
                   a.ts = System.currentTimeMillis();
                   acts[slot] = a;
                   BubbleActs.save(sp, acts);
                   page = ACTS;
                   show();
-              }
-
-              // the app is opened now; when the person comes back to the launcher its last screen is saved
-              void actRecordByOpening(final int slot, final String pkg) {
-                  final Intent li = getPackageManager().getLaunchIntentForPackage(pkg);
-                  if (li == null) {
-                      Toast.makeText(this, t("این برنامه قابل اجرا نیست", "This app cannot be opened"), Toast.LENGTH_SHORT).show();
-                      return;
-                  }
-                  if (!BubbleActs.hasUsage(this)) {
-                      new AlertDialog.Builder(this).setTitle(t("دسترسی لازم است", "Permission needed"))
-                              .setMessage(t("برای ثبت آخرین اجرای برنامه، دسترسی «Usage access» را برای VadLan فعال کنید و دوباره تلاش کنید. یا فقط باز کردن ساده برنامه را ثبت کنید.",
-                                      "To save the app's last run, allow \"Usage access\" for VadLan and try again. Or save just a plain open of the app."))
-                              .setPositiveButton(t("اعطای دسترسی", "Grant"), (d, w) -> {
-                                  try { startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)); } catch (Exception e) { }
-                              })
-                              .setNeutralButton(t("فقط باز کردن برنامه", "Just open the app"),
-                                      (d, w) -> actSave(slot, pkg, "app", "", t("باز کردن برنامه", "Open app")))
-                              .setNegativeButton(t("لغو", "Cancel"), null).show();
-                      return;
-                  }
-                  sp.edit().putInt("bub_pend_slot", slot).putString("bub_pend_pkg", pkg)
-                          .putLong("bub_pend_t", System.currentTimeMillis()).apply();
-                  Toast.makeText(this, t("برنامه را اجرا کنید و کارتان را انجام دهید، سپس به لانچر برگردید",
-                          "Use the app, then come back to the launcher"), Toast.LENGTH_LONG).show();
-                  startActivity(li);
-              }
-
-              // back in the launcher after "open the app and save its last run"
-              void finishPendingAct() {
-                  String pkg = sp.getString("bub_pend_pkg", null);
-                  if (pkg == null) return;
-                  int slot = sp.getInt("bub_pend_slot", -1);
-                  long since = sp.getLong("bub_pend_t", 0);
-                  sp.edit().remove("bub_pend_pkg").remove("bub_pend_slot").remove("bub_pend_t").apply();
-                  if (slot < 0 || slot >= BubbleActs.MAX) return;
-                  String cls = BubbleActs.lastScreen(this, pkg, since);
-                  if (cls != null) {
-                      actSave(slot, pkg, "cmp", cls, cls.substring(cls.lastIndexOf('.') + 1));
-                      if (cls.equals(BubbleActs.mainScreen(this, pkg)))
-                          Toast.makeText(this, t("این صفحه اصلی برنامه است و اجرای آن فقط برنامه را باز می‌کند؛ بهتر است میان‌بر یا بخشی از برنامه را انتخاب کنید",
-                                  "This is the app's main screen; running it only opens the app. Better pick a shortcut or an app part"), Toast.LENGTH_LONG).show();
-                      else
-                          Toast.makeText(this, t("آخرین اجرای برنامه ثبت شد", "The app's last run was saved"), Toast.LENGTH_SHORT).show();
-                  } else {
-                      actSave(slot, pkg, "app", "", t("باز کردن برنامه", "Open app"));
-                      Toast.makeText(this, t("آخرین اجرا پیدا نشد؛ باز کردن ساده ثبت شد", "Last run not found; a plain open was saved"), Toast.LENGTH_SHORT).show();
-                  }
               }
 
               void setTile(boolean on) {
