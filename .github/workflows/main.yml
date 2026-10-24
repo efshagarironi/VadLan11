@@ -1502,6 +1502,7 @@ jobs:
           import android.view.View;
           import android.view.ViewPropertyAnimator;
           import android.view.WindowManager;
+          import android.view.animation.AccelerateInterpolator;
           import android.view.animation.DecelerateInterpolator;
           import android.view.animation.OvershootInterpolator;
           import android.widget.FrameLayout;
@@ -1618,6 +1619,7 @@ jobs:
            private void openLauncher(boolean settings) {
             Intent i = new Intent(MockBubbleService.this, MainActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            i.putExtra("from_bubble", true);
             if (settings) i.putExtra("open_mock_settings", true);
             startActivity(i);
            }
@@ -1812,12 +1814,14 @@ jobs:
 
             // boxes kept open next to each other ("folder box" option); the newest one is listRoot
             static class Box {
-             FrameLayout root; LinearLayout card; WindowManager.LayoutParams p; String key;
+             FrameLayout root; LinearLayout card; WindowManager.LayoutParams p; String key; int cx, cy;
              Box(FrameLayout r, LinearLayout c, WindowManager.LayoutParams q, String k) { root = r; card = c; p = q; key = k; }
             }
             private final List<Box> sideBoxes = new java.util.ArrayList<>();
             private Integer forcedX = null, forcedY = null;
             private String curKey = null;
+            private int curCX, curCY, lastRowLeft, lastRowRight, lastRowBottom;
+            private boolean noOpenFx = false;
             private int listTextColor = 0xFFFFFFFF;
             private int lastTouchRawY = 0;
 
@@ -1856,73 +1860,47 @@ jobs:
             // puts a new box next to the current one, at the same height
             private void openSideBox(List<LItem> l, String key) {
            int gap = dpToPx(3);
-           final int prevX = listParams.x;
            boolean right = sp.getInt("mock_px", 70) > 50;
            int w = listParams.width;
            int sh = getResources().getDisplayMetrics().heightPixels;
+           final int cxN = right ? lastRowLeft : lastRowRight, cyN = lastRowBottom;
            forcedX = right ? listParams.x - w - gap : listParams.x + w + gap;
            // the new column starts at the height of the touched folder
            int y = lastTouchRawY;
            forcedY = Math.max(dpToPx(8), Math.min(sh - listParams.height - dpToPx(8), y));
-           sideBoxes.add(new Box(listRoot, listCard, listParams, curKey));
+           Box pb = new Box(listRoot, listCard, listParams, curKey);
+           pb.cx = curCX; pb.cy = curCY;
+           sideBoxes.add(pb);
            listRoot = null;
            listCard = null;
            slideOpen = true;
+           noOpenFx = true;
            openCustomList(l);
+           noOpenFx = false;
            slideOpen = false;
            curKey = key;
+           curCX = cxN; curCY = cyN;
            forcedX = null;
            forcedY = null;
-           // slides in from the bubble side
-           final WindowManager.LayoutParams p = listParams;
-           final FrameLayout root = listRoot;
-           final int to = p.x;
-           final int from = prevX;
-           p.x = from;
-           try { wm.updateViewLayout(root, p); } catch (Exception e) { }
-           ValueAnimator va = ValueAnimator.ofFloat(0f, 1f);
-           va.setDuration(260);
-           va.setInterpolator(new DecelerateInterpolator());
-           va.addUpdateListener(an -> {
-            p.x = from + Math.round((to - from) * (Float) an.getAnimatedValue());
-            try { wm.updateViewLayout(root, p); } catch (Exception e) { }
-           });
-           va.start();
+           fxAnim(listRoot, listParams, true, cxN, cyN, lastTouchRawY, null);
           }
 
-          // closes the newest column with a slide back to the bubble side; the column under it is shown again
+          // closes the newest column with the chosen effect, towards its folder corner; the column under it is shown again
           private void closeTopSideAnim() {
            if (sideBoxes.isEmpty() || listRoot == null) { closeList(); return; }
            final FrameLayout old = listRoot;
            final WindowManager.LayoutParams op = listParams;
+           final int ocx = curCX, ocy = curCY;
            Box b = sideBoxes.remove(sideBoxes.size() - 1);
            listRoot = b.root;
            listCard = b.card;
            listParams = b.p;
            curKey = b.key;
-           final int dir = sp.getInt("mock_px", 70) > 50 ? 1 : -1;
-           final int from = op.x;
-           final int to = listParams.x;
-           ValueAnimator va = ValueAnimator.ofFloat(0f, 1f);
-           va.setDuration(220);
-           va.setInterpolator(new DecelerateInterpolator());
-           va.addUpdateListener(an -> {
-            float t = (Float) an.getAnimatedValue();
-            op.x = from + Math.round((to - from) * t);
-            old.setAlpha(1f - t);
-            try { wm.updateViewLayout(old, op); } catch (Exception e) { }
-           });
-           va.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator an) {
-             try { wm.removeView(old); } catch (Exception e) { }
-            }
-           });
-           va.start();
+           curCX = b.cx; curCY = b.cy;
+           fxAnim(old, op, false, ocx, ocy, ocy, () -> { try { wm.removeView(old); } catch (Exception e) { } });
           }
 
-          // closes the newest box; the box under it is shown again
-            private void closeTopSide() {
+          private void closeTopSide() {
              if (sideBoxes.isEmpty()) { closeList(); return; }
              if (listRoot != null) { try { wm.removeView(listRoot); } catch (Exception e) { } }
              Box b = sideBoxes.remove(sideBoxes.size() - 1);
@@ -2010,7 +1988,7 @@ jobs:
              } catch (Throwable e) { }
             }
             fillList();
-            if (slideOpen || sp.getInt("bub_fx", 6) != 0) listRoot.setAlpha(0f);   // the opening effect shows it
+            if ((slideOpen || sp.getInt("bub_fx", 6) != 0) && !(noOpenFx && sp.getInt("bub_fx", 6) == 0)) listRoot.setAlpha(0f);   // the opening effect shows it
             layoutList(true);
             playOpen();
            }
@@ -2018,7 +1996,7 @@ jobs:
            // opening effect of the action list (0 none, 1 fade, 2 slide from the side, 3 grow from the bubble, 5 slide from the top, 6 stretchy drop)
            private void playOpen() {
             final FrameLayout r = listRoot;
-            final int fx = (slideOpen ? 2 : sp.getInt("bub_fx", 6));
+            final int fx = noOpenFx ? 0 : (slideOpen ? 2 : sp.getInt("bub_fx", 6));
             if (r == null || fx == 0) return;
             final long ms = Math.max(100, Math.min(1500, sp.getInt("bub_fxms", 300)));
             final boolean right = sp.getInt("mock_px", 70) > 50;
@@ -2078,8 +2056,53 @@ jobs:
             });
            }
 
-           private void closeList() {
-             for (Box b : sideBoxes) { try { wm.removeView(b.root); } catch (Exception e) { } }
+           private int[] bubblePivot() {
+             if (params == null) return new int[]{0, 0};
+             return new int[]{params.x + params.width / 2, params.y + params.height / 2};
+            }
+
+            // the chosen box effect (the same for opening and closing); (px,py) = the screen point the box grows from / shrinks to
+            private void fxAnim(final FrameLayout r, final WindowManager.LayoutParams p, final boolean open, final int px, final int py, final int folderTop, final Runnable end) {
+             final int fx = sp.getInt("bub_fx", 6);
+             final long ms = Math.max(100, Math.min(1500, sp.getInt("bub_fxms", 300)));
+             final int w = Math.max(1, p.width), h = Math.max(1, p.height);
+             final int ex = p.x, ey = p.y;
+             final boolean folder = folderTop != Integer.MIN_VALUE;
+             r.setPivotX(px - ex);
+             r.setPivotY(py - ey);
+             // a folder column closed with the top slide simply goes away
+             if (fx == 0 || (folder && fx == 5 && !open)) { if (end != null) end.run(); return; }
+             final int x0, y0;
+             if (fx == 5 || fx == 2) {
+              if (folder) { x0 = ex; y0 = folderTop - h; }
+              else { x0 = px - w / 2; y0 = py - h / 2; }
+             } else { x0 = ex; y0 = ey; }
+             ValueAnimator va = ValueAnimator.ofFloat(open ? 0f : 1f, open ? 1f : 0f);
+             va.setDuration(open ? ms : Math.max(100, ms - 60));
+             va.setInterpolator(open ? new DecelerateInterpolator() : new AccelerateInterpolator());
+             va.addUpdateListener(an -> {
+              float f = (Float) an.getAnimatedValue();
+              float a = Math.min(1f, f * 3f);
+              if (fx == 1) r.setAlpha(f);
+              else if (fx == 3) { float sc = 0.05f + 0.95f * f; r.setScaleX(sc); r.setScaleY(sc); r.setAlpha(a); }
+              else if (fx == 6) { r.setScaleX(0.3f + 0.7f * f); r.setScaleY(0.05f + 0.95f * f); r.setAlpha(a); }
+              else {
+               r.setAlpha(a);
+               p.x = Math.round(x0 + (ex - x0) * f);
+               p.y = Math.round(y0 + (ey - y0) * f);
+               try { wm.updateViewLayout(r, p); } catch (Exception e) { }
+              }
+             });
+             va.addListener(new AnimatorListenerAdapter() {
+              @Override
+              public void onAnimationEnd(Animator an) { if (end != null) end.run(); }
+             });
+             va.start();
+            }
+
+            private void closeList() {
+             final int[] bpv = bubblePivot();
+             for (Box b : sideBoxes) { if (b.root != listRoot) { final FrameLayout gone = b.root; fxAnim(b.root, b.p, false, bpv[0], bpv[1], Integer.MIN_VALUE, () -> { try { wm.removeView(gone); } catch (Exception e) { } }); } }
              sideBoxes.clear();
              curKey = null;
             final FrameLayout old = listRoot;
@@ -2087,14 +2110,9 @@ jobs:
             listCard = null;
             customItems = null;
             if (old != null) {
-             final int fx = sp.getInt("bub_fx", 6);
-             if (fx == 0) {
-              try { wm.removeView(old); } catch (Exception e) {}
-             } else {
-              // a short fade-out, then the window goes
-              old.animate().alpha(0f).setDuration(Math.max(80, Math.min(1500, sp.getInt("bub_fxms", 300)) / 2))
-                .withEndAction(() -> { try { wm.removeView(old); } catch (Exception e) {} }).start();
-             }
+             final WindowManager.LayoutParams op = listParams;
+             final FrameLayout closing = old;
+             fxAnim(old, op, false, bpv[0], bpv[1], Integer.MIN_VALUE, () -> { try { wm.removeView(closing); } catch (Exception e) { } });
             }
             handler.removeCallbacks(collapseRunnable);
             handler.postDelayed(collapseRunnable, collapseDelay());
@@ -2219,7 +2237,7 @@ jobs:
             }
             row.setOnTouchListener((v, ev) -> {
              int a = ev.getAction();
-             if (a == MotionEvent.ACTION_DOWN) { int[] rl = new int[2]; v.getLocationOnScreen(rl); lastTouchRawY = rl[1]; }
+             if (a == MotionEvent.ACTION_DOWN) { int[] rl = new int[2]; v.getLocationOnScreen(rl); lastTouchRawY = rl[1]; lastRowLeft = rl[0]; lastRowRight = rl[0] + v.getWidth(); lastRowBottom = rl[1] + v.getHeight(); }
              if (sep) {
               if (a == MotionEvent.ACTION_DOWN) v.setAlpha(0.65f);
               else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) v.setAlpha(1f);
@@ -2877,6 +2895,8 @@ jobs:
            protected void onNewIntent(Intent in) {
             super.onNewIntent(in);
             setIntent(in);
+            // opened from the bubble while it is running in the background: it comes back as it was
+            if (in != null && in.getBooleanExtra("from_bubble", false)) return;
             page = HOME;
             if (!sp.getBoolean("fpKeep", false)) openFolder = null;
             plusOpen = false;
@@ -8046,10 +8066,10 @@ jobs:
              final int fx = sp.getInt("bub_fx", 6);
              final String[] fxNames = {
                t("بدون افکت", "No effect"), t("قطره‌ای (کش‌دار)", "Drop (stretchy)"), t("محو شدن", "Fade"),
-               t("کشویی", "Slide from the side"), t("بزرگ شدن از حباب", "Grow from the bubble"),
+               t("بزرگ شدن از حباب", "Grow from the bubble"),
                t("کشویی از بالا", "Slide from the top")};
-             final int[] fxIds = {0, 6, 1, 2, 3, 5};
-             final int[] fxDots = {0xFF9E9E9E, 0xFF29B6F6, 0xFF42A5F5, 0xFF26A69A, 0xFFFF7043, 0xFF66BB6A};
+             final int[] fxIds = {0, 6, 1, 3, 5};
+             final int[] fxDots = {0xFF9E9E9E, 0xFF29B6F6, 0xFF42A5F5, 0xFFFF7043, 0xFF66BB6A};
              r.addView(accordionGroupFaded(0xFF26A69A, "🎞", t("افکت کادر عملکرد", "Action box effect"), fg, 0.6f, () -> {
               View[] its = new View[fxNames.length];
               for (int i = 0; i < its.length; i++) {
