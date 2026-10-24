@@ -2071,7 +2071,7 @@ jobs:
              r.setPivotX(px - ex);
              r.setPivotY(py - ey);
              // a folder column closed with the top slide simply goes away
-             if (fx == 0 || (folder && fx == 5 && !open)) { if (end != null) end.run(); return; }
+             if (fx == 0 || (folder && !open && (fx == 3 || fx == 5 || fx == 6))) { if (end != null) end.run(); return; }
              final int x0, y0;
              if (fx == 5 || fx == 2) {
               if (folder) { x0 = ex; y0 = folderTop - h; }
@@ -2088,6 +2088,7 @@ jobs:
               else if (fx == 6) { r.setScaleX(0.3f + 0.7f * f); r.setScaleY(0.05f + 0.95f * f); r.setAlpha(a); }
               else {
                r.setAlpha(a);
+               if (fx == 5 && !folder && !open) { float sc = 0.1f + 0.9f * f; r.setScaleX(sc); r.setScaleY(sc); }
                p.x = Math.round(x0 + (ex - x0) * f);
                p.y = Math.round(y0 + (ey - y0) * f);
                try { wm.updateViewLayout(r, p); } catch (Exception e) { }
